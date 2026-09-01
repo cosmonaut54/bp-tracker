@@ -82,7 +82,10 @@
     <!-- History List -->
     <div class="space-y-3">
       <div class="flex justify-between items-center px-1">
-        <h2 class="text-sm font-semibold text-slate-300">History</h2>
+        <div>
+          <h2 class="text-sm font-semibold text-slate-300">History</h2>
+          <p class="text-[10px] text-slate-500 mt-0.5">All times Eastern</p>
+        </div>
         <span id="logCount" class="text-xs text-slate-500">0 records</span>
       </div>
       <div id="historyList" class="space-y-2">
@@ -94,6 +97,15 @@
   <script>
     const STORAGE_KEY = 'bp_tracker_records';
     let chartInstance = null;
+
+    // Readings are stored as UTC ISO strings and always DISPLAYED in Eastern time,
+    // so a reading logged at 9am at home still reads 9am if you open this elsewhere.
+    // 'America/New_York' (not the fixed offset 'EST') so EDT/EST switches automatically.
+    const TZ = 'America/New_York';
+    const fmtDayLong  = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' });
+    const fmtDayShort = new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'numeric', day: 'numeric' });
+    const fmtClock    = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
+    const fmtCsvDate  = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
 
     // AHA/ACC Blood Pressure Classification
     function classifyBP(sys, dia) {
@@ -157,7 +169,11 @@
       const ctx = document.getElementById('trendChart').getContext('2d');
       const recent = [...logs].slice(0, 10).reverse();
 
-      const labels = recent.map(r => new Date(r.timestamp).toLocaleDateString([], { month: 'numeric', day: 'numeric' }));
+      // Array labels render on two lines in Chart.js: date on top, time beneath.
+      const labels = recent.map(r => {
+        const d = new Date(r.timestamp);
+        return [fmtDayShort.format(d), fmtClock.format(d)];
+      });
       const sysData = recent.map(r => r.sys);
       const diaData = recent.map(r => r.dia);
 
@@ -190,10 +206,18 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#94a3b8', font: { size: 11 } } }
+            legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                title: (items) => {
+                  const d = new Date(recent[items[0].dataIndex].timestamp);
+                  return `${fmtDayLong.format(d)} \u00b7 ${fmtClock.format(d)}`;
+                }
+              }
+            }
           },
           scales: {
-            x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { display: false } },
+            x: { ticks: { color: '#64748b', font: { size: 9 }, maxRotation: 0, autoSkipPadding: 8 }, grid: { display: false } },
             y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#334155' } }
           }
         }
@@ -213,8 +237,8 @@
 
       logs.forEach(item => {
         const date = new Date(item.timestamp);
-        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = fmtDayLong.format(date);
+        const timeStr = fmtClock.format(date);
         const category = classifyBP(item.sys, item.dia);
 
         const row = document.createElement('div');
@@ -226,8 +250,10 @@
               <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${category.color}">${category.label}</span>
               ${item.pulse ? `<span class="text-xs text-slate-400">♥ ${item.pulse}</span>` : ''}
             </div>
-            <div class="text-[11px] text-slate-400 mt-0.5">
-              ${dateStr} at ${timeStr} ${item.notes ? `• <span class="italic text-slate-300">${escapeHTML(item.notes)}</span>` : ''}
+            <div class="mt-1 leading-tight">
+              <div class="text-[11px] text-slate-400">${dateStr}</div>
+              <div class="text-xs font-medium text-slate-200">${timeStr}</div>
+              ${item.notes ? `<div class="text-[11px] italic text-slate-400 mt-1">${escapeHTML(item.notes)}</div>` : ''}
             </div>
           </div>
           <button onclick="deleteRecord(${item.id})" class="text-slate-500 hover:text-red-400 p-1 text-sm transition">✕</button>
@@ -242,11 +268,11 @@
       const logs = getLogs();
       if (!logs.length) return alert('No data to export.');
       
-      let csv = 'Timestamp,Date,Time,Systolic,Diastolic,Pulse,Category,Notes\n';
+      let csv = 'Timestamp (UTC),Date (ET),Time (ET),Systolic,Diastolic,Pulse,Category,Notes\n';
       logs.forEach(r => {
         const d = new Date(r.timestamp);
         const cat = classifyBP(r.sys, r.dia).label;
-        csv += `"${r.timestamp}","${d.toLocaleDateString()}","${d.toLocaleTimeString()}","${r.sys}","${r.dia}","${r.pulse || ''}","${cat}","${(r.notes || '').replace(/"/g, '""')}"\n`;
+        csv += `"${r.timestamp}","${fmtCsvDate.format(d)}","${fmtClock.format(d)}","${r.sys}","${r.dia}","${r.pulse || ''}","${cat}","${(r.notes || '').replace(/"/g, '""')}"\n`;
       });
 
       const blob = new Blob([csv], { type: 'text/csv' });
