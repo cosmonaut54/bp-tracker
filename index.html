@@ -66,23 +66,16 @@
                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label for="pulseHome" class="block text-xs font-medium text-slate-400 mb-1">Pulse</label>
-              <input type="number" id="pulseHome" placeholder="70" min="30" max="220" inputmode="numeric"
-                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-3">
-            <div>
               <label for="weightHome" class="block text-xs font-medium text-slate-400 mb-1">Weight</label>
               <input type="number" id="weightHome" placeholder="175" min="50" max="700" step="0.1" inputmode="decimal"
                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
             </div>
-            <div class="col-span-2">
-              <label for="notesHome" class="block text-xs font-medium text-slate-400 mb-1">Notes (optional)</label>
-              <input type="text" id="notesHome" placeholder="e.g., morning, after coffee"
-                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
-            </div>
+          </div>
+
+          <div>
+            <label for="notesHome" class="block text-xs font-medium text-slate-400 mb-1">Notes (optional)</label>
+            <input type="text" id="notesHome" placeholder="e.g., morning, after coffee"
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
           </div>
 
           <p id="errHome" class="hidden text-xs text-rose-400"></p>
@@ -104,7 +97,7 @@
       <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-5 border border-slate-700/60 shadow-xl mb-5">
         <h2 class="text-sm font-semibold text-slate-300 mb-3">Log Reading</h2>
         <form id="formBp" class="space-y-4">
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="sysBp" class="block text-xs font-medium text-slate-400 mb-1">Systolic</label>
               <input type="number" id="sysBp" placeholder="120" min="50" max="260" inputmode="numeric"
@@ -113,11 +106,6 @@
             <div>
               <label for="diaBp" class="block text-xs font-medium text-slate-400 mb-1">Diastolic</label>
               <input type="number" id="diaBp" placeholder="80" min="30" max="180" inputmode="numeric"
-                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label for="pulseBp" class="block text-xs font-medium text-slate-400 mb-1">Pulse</label>
-              <input type="number" id="pulseBp" placeholder="70" min="30" max="220" inputmode="numeric"
                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
             </div>
           </div>
@@ -274,13 +262,37 @@
       <div class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50 mb-5">
         <h2 class="text-sm font-semibold text-slate-300 mb-3">Your Data</h2>
         <div id="dataStats" class="grid grid-cols-3 gap-2 mb-4"></div>
-        <button id="exportBtn2" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl transition text-sm">
-          Export CSV
-        </button>
-        <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
-          Everything lives in this browser's local storage on this device. Nothing is uploaded,
-          and there is no account. Clearing site data or deleting the app removes it, so export
-          a CSV before you switch phones.
+
+        <div class="space-y-2">
+          <button id="backupBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-xl transition text-sm">
+            Download Backup
+          </button>
+          <button id="restoreBtn" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl transition text-sm">
+            Restore from Backup
+          </button>
+          <input type="file" id="restoreFile" accept="application/json,.json" class="hidden" />
+          <button id="exportBtn2" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2.5 rounded-xl transition text-sm border border-slate-700">
+            Export CSV for Doctor
+          </button>
+        </div>
+
+        <p id="backupStatus" class="text-[11px] mt-3"></p>
+
+        <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">
+          <strong class="text-slate-400">Backup</strong> saves everything &mdash; readings, weigh-ins,
+          and your profile &mdash; as one file you can restore later or on a new phone. Restoring merges
+          into what's already here and skips duplicates, so it is safe to run twice.
+          <strong class="text-slate-400">CSV</strong> is for your doctor and cannot be restored from.
+        </p>
+      </div>
+
+      <div class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50 mb-5">
+        <h2 class="text-sm font-semibold text-slate-300 mb-2">Storage</h2>
+        <p id="storageStatus" class="text-[11px] text-slate-400 mb-2">Checking…</p>
+        <p class="text-[10px] text-slate-500 leading-relaxed">
+          Data lives in this browser's storage on this device. Nothing is uploaded and there is no
+          account, which is the point &mdash; but it also means a cleared browser, a lost phone, or a
+          reinstall takes it with it. A downloaded backup is the only copy that survives that.
         </p>
       </div>
 
@@ -328,6 +340,11 @@
     </div>
   </nav>
 
+  <!-- Save confirmation -->
+  <div id="toast" role="status" aria-live="polite"
+       class="hidden fixed left-1/2 -translate-x-1/2 z-50 bg-slate-700 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-2xl border border-slate-600 max-w-[85%] text-center"
+       style="bottom: calc(5.5rem + env(safe-area-inset-bottom));"></div>
+
   <!-- Delete confirmation -->
   <div id="confirmModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/70 backdrop-blur-sm p-6">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 w-full max-w-xs shadow-2xl">
@@ -344,6 +361,7 @@
     const KEY_BP      = 'bp_tracker_records';
     const KEY_WEIGHT  = 'bp_tracker_weight';
     const KEY_PROFILE = 'bp_tracker_profile';
+    const KEY_META    = 'bp_tracker_meta';
 
     let bpChart = null;
     let weightChartInstance = null;
@@ -359,6 +377,16 @@
     const fmtYear     = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric' });
 
     const $ = (id) => document.getElementById(id);
+
+    let toastTimer = null;
+    function showToast(message) {
+      const el = $('toast');
+      if (!el) return;
+      el.textContent = message;
+      el.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+    }
 
     // ---------- Classification ----------
 
@@ -484,9 +512,9 @@
     // ---------- Entry forms ----------
 
     const FORMS = [
-      { form: 'formHome',   sys: 'sysHome', dia: 'diaHome', pulse: 'pulseHome', weight: 'weightHome', notes: 'notesHome', err: 'errHome' },
-      { form: 'formBp',     sys: 'sysBp',   dia: 'diaBp',   pulse: 'pulseBp',   weight: null,        notes: 'notesBp',   err: 'errBp' },
-      { form: 'formWeight', sys: null,      dia: null,      pulse: null,        weight: 'weightWt',  notes: 'notesWt',   err: 'errWt' }
+      { form: 'formHome',   sys: 'sysHome', dia: 'diaHome', weight: 'weightHome', notes: 'notesHome', err: 'errHome' },
+      { form: 'formBp',     sys: 'sysBp',   dia: 'diaBp',   weight: null,         notes: 'notesBp',   err: 'errBp' },
+      { form: 'formWeight', sys: null,      dia: null,      weight: 'weightWt',   notes: 'notesWt',   err: 'errWt' }
     ];
 
     const fieldValue = (id) => (id && $(id) ? $(id).value.trim() : '');
@@ -499,7 +527,6 @@
 
       const rawSys = fieldValue(cfg.sys);
       const rawDia = fieldValue(cfg.dia);
-      const rawPulse = fieldValue(cfg.pulse);
       const rawWeight = fieldValue(cfg.weight);
       const notes = fieldValue(cfg.notes);
 
@@ -515,33 +542,51 @@
         return fail('Blood pressure needs both systolic and diastolic.');
       }
 
+      let sys = null, dia = null, lbs = null;
+
+      if (hasBP) {
+        sys = parseInt(rawSys, 10);
+        dia = parseInt(rawDia, 10);
+        if (!Number.isFinite(sys) || sys < 50 || sys > 260) {
+          return fail('Systolic looks off. Expected somewhere between 50 and 260.');
+        }
+        if (!Number.isFinite(dia) || dia < 30 || dia > 180) {
+          return fail('Diastolic looks off. Expected somewhere between 30 and 180.');
+        }
+        // The top number is always the higher one. Catching this stops a
+        // transposed reading (91/134) from being stored and mis-classified.
+        if (sys <= dia) {
+          return fail(`Systolic must be higher than diastolic. Did you mean ${dia}/${sys}?`);
+        }
+      }
+
+      if (hasWeight) {
+        lbs = parseFloat(rawWeight);
+        if (!Number.isFinite(lbs) || lbs < 50 || lbs > 700) {
+          return fail('Weight looks off. Expected somewhere between 50 and 700 lbs.');
+        }
+        lbs = Math.round(lbs * 10) / 10;
+      }
+
       const timestamp = new Date().toISOString();
       const id = Date.now();
 
       if (hasBP) {
         const bp = getBP();
-        bp.unshift({
-          id, timestamp,
-          sys: parseInt(rawSys, 10),
-          dia: parseInt(rawDia, 10),
-          pulse: rawPulse === '' ? null : parseInt(rawPulse, 10),
-          notes
-        });
+        bp.unshift({ id, timestamp, sys, dia, notes });
         writeList(KEY_BP, bp);
       }
       if (hasWeight) {
         const weights = getWeights();
-        weights.unshift({
-          id: hasBP ? id + 1 : id,
-          timestamp,
-          lbs: Math.round(parseFloat(rawWeight) * 10) / 10,
-          notes
-        });
+        weights.unshift({ id: hasBP ? id + 1 : id, timestamp, lbs, notes });
         writeList(KEY_WEIGHT, weights);
       }
 
       $(cfg.form).reset();
       render();
+      showToast(hasBP && hasWeight ? `Saved ${sys}/${dia} and ${lbs} lbs`
+              : hasBP ? `Saved ${sys}/${dia}`
+              : `Saved ${lbs} lbs`);
     }
 
     // ---------- Delete, with confirmation ----------
@@ -566,6 +611,7 @@
       writeList(key, readList(key).filter(item => item.id !== id));
       closeConfirm();
       render();
+      showToast('Entry deleted');
     }
     function deleteButton(onClick) {
       const btn = document.createElement('button');
@@ -813,7 +859,6 @@
             <div class="flex items-center gap-2">
               <span class="text-base font-bold text-white">${item.sys}/${item.dia}</span>
               <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${cat.color}">${cat.label}</span>
-              ${item.pulse ? `<span class="text-xs text-slate-400">\u2665 ${item.pulse}</span>` : ''}
             </div>
             <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>`;
         } else {
@@ -918,7 +963,6 @@
           <div class="flex items-center gap-2">
             <span class="text-base font-bold text-white">${item.sys}/${item.dia}</span>
             <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${cat.color}">${cat.label}</span>
-            ${item.pulse ? `<span class="text-xs text-slate-400">\u2665 ${item.pulse}</span>` : ''}
           </div>
           <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>`;
         row.appendChild(left);
@@ -1009,6 +1053,7 @@
       profile.sex = $('sex').value;
       saveProfile(profile);
       render();
+      showToast('Profile saved');
     }
 
     function render() {
@@ -1023,6 +1068,7 @@
       renderWeightStats(weights, heightIn);
       renderBMIScale(weights, heightIn);
       renderProfile(bp, weights);
+      renderBackupStatus();
       if (activePage === 'bp') updateBPChart(bp);
       if (activePage === 'weight') updateWeightChart(weights, heightIn);
     }
@@ -1040,25 +1086,25 @@
 
       const rows = [];
       bp.forEach(r => rows.push({
-        type: 'Blood Pressure', timestamp: r.timestamp, sys: r.sys, dia: r.dia, pulse: r.pulse,
+        type: 'Blood Pressure', timestamp: r.timestamp, sys: r.sys, dia: r.dia,
         category: classifyBP(r.sys, r.dia).label, lbs: '', bmi: '', notes: r.notes
       }));
       weights.forEach(r => {
         const bmi = calcBMI(r.lbs, heightIn);
         rows.push({
-          type: 'Weight', timestamp: r.timestamp, sys: '', dia: '', pulse: '',
+          type: 'Weight', timestamp: r.timestamp, sys: '', dia: '',
           category: bmi ? classifyBMI(bmi).label : '', lbs: r.lbs,
           bmi: bmi ? bmi.toFixed(1) : '', notes: r.notes
         });
       });
       rows.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-      let csv = 'Type,Timestamp (UTC),Date (ET),Time (ET),Systolic,Diastolic,Pulse,Category,Weight (lbs),BMI,Notes,Height (in),Sex\n';
+      let csv = 'Type,Timestamp (UTC),Date (ET),Time (ET),Systolic,Diastolic,Category,Weight (lbs),BMI,Notes,Height (in),Sex\n';
       rows.forEach(r => {
         const d = new Date(r.timestamp);
         csv += [
           csvCell(r.type), csvCell(r.timestamp), csvCell(fmtCsvDate.format(d)), csvCell(fmtClock.format(d)),
-          csvCell(r.sys), csvCell(r.dia), csvCell(r.pulse), csvCell(r.category),
+          csvCell(r.sys), csvCell(r.dia), csvCell(r.category),
           csvCell(r.lbs), csvCell(r.bmi), csvCell(r.notes),
           csvCell(heightIn || ''), csvCell(SEX_LABELS[profile.sex] || '')
         ].join(',') + '\n';
@@ -1071,6 +1117,149 @@
       a.download = `health_log_${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+      showToast('CSV exported');
+    }
+
+    // ---------- Backup, restore, storage durability ----------
+
+    const BACKUP_FORMAT = 'bp-tracker-backup';
+    const BACKUP_VERSION = 1;
+
+    function getMeta() {
+      try { return JSON.parse(localStorage.getItem(KEY_META) || '{}'); }
+      catch (err) { return {}; }
+    }
+    function setMeta(patch) {
+      localStorage.setItem(KEY_META, JSON.stringify(Object.assign(getMeta(), patch)));
+    }
+
+    function downloadBackup() {
+      const payload = {
+        format: BACKUP_FORMAT,
+        version: BACKUP_VERSION,
+        exportedAt: new Date().toISOString(),
+        profile: getProfile(),
+        bloodPressure: getBP(),
+        weight: getWeights()
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bp-tracker-backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setMeta({ lastBackup: new Date().toISOString() });
+      renderBackupStatus();
+      showToast('Backup downloaded');
+    }
+
+    // Merge rather than replace: restoring twice, or restoring an older backup
+    // over newer entries, must never destroy anything already here.
+    function mergeList(existing, incoming) {
+      const seen = new Set(existing.map(r => `${r.id}|${r.timestamp}`));
+      let added = 0;
+      incoming.forEach(r => {
+        const fingerprint = `${r.id}|${r.timestamp}`;
+        if (!seen.has(fingerprint)) {
+          existing.push(r);
+          seen.add(fingerprint);
+          added++;
+        }
+      });
+      existing.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      return added;
+    }
+
+    function restoreBackup(file) {
+      const reader = new FileReader();
+      reader.onerror = () => showToast('Could not read that file');
+      reader.onload = () => {
+        let payload;
+        try {
+          payload = JSON.parse(reader.result);
+        } catch (err) {
+          return showToast('That file is not valid JSON');
+        }
+        if (!payload || payload.format !== BACKUP_FORMAT) {
+          return showToast('That is not a BP Tracker backup');
+        }
+        if (!Array.isArray(payload.bloodPressure) || !Array.isArray(payload.weight)) {
+          return showToast('Backup file is missing its records');
+        }
+
+        const bp = getBP();
+        const weights = getWeights();
+        const addedBP = mergeList(bp, payload.bloodPressure);
+        const addedWt = mergeList(weights, payload.weight);
+        writeList(KEY_BP, bp);
+        writeList(KEY_WEIGHT, weights);
+
+        // Only adopt the backup's profile if none has been saved on this device.
+        if (payload.profile && localStorage.getItem(KEY_PROFILE) === null) {
+          saveProfile(payload.profile);
+        }
+
+        render();
+        renderBackupStatus();
+        const skipped = (payload.bloodPressure.length + payload.weight.length) - (addedBP + addedWt);
+        showToast(`Restored ${addedBP + addedWt} entries` + (skipped ? `, skipped ${skipped} duplicates` : ''));
+      };
+      reader.readAsText(file);
+    }
+
+    function renderBackupStatus() {
+      const el = $('backupStatus');
+      if (!el) return;
+      const { lastBackup } = getMeta();
+      const total = getBP().length + getWeights().length;
+
+      if (!lastBackup) {
+        el.textContent = total
+          ? 'Never backed up. Download one to keep a copy off this device.'
+          : 'No data to back up yet.';
+        el.className = 'text-[11px] mt-3 ' + (total ? 'text-amber-400' : 'text-slate-500');
+        return;
+      }
+
+      const d = new Date(lastBackup);
+      const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+      const stale = days >= 30;
+      el.textContent =
+        `Last backup: ${fmtDayLong.format(d)} \u00b7 ${fmtClock.format(d)}` +
+        (stale ? ` \u2014 ${days} days ago, worth refreshing.` : '');
+      el.className = 'text-[11px] mt-3 ' + (stale ? 'text-amber-400' : 'text-slate-400');
+    }
+
+    // Ask the browser not to evict this data when storage runs short. Chrome and
+    // Firefox decide by heuristic; Safari grants it to installed home-screen apps.
+    async function initStorageDurability() {
+      const el = $('storageStatus');
+      if (!el) return;
+      try {
+        if (!navigator.storage || !navigator.storage.persist) {
+          el.textContent = 'This browser does not report storage durability. Keep a downloaded backup.';
+          el.className = 'text-[11px] text-slate-400 mb-2';
+          return;
+        }
+        const already = await navigator.storage.persisted();
+        const granted = already || await navigator.storage.persist();
+
+        let usage = '';
+        if (navigator.storage.estimate) {
+          const est = await navigator.storage.estimate();
+          if (est && est.usage) usage = ` Currently using about ${Math.max(1, Math.round(est.usage / 1024))} KB.`;
+        }
+
+        el.textContent = granted
+          ? `Persistent \u2014 the browser has agreed not to clear this data automatically.${usage}`
+          : `Best-effort \u2014 the browser may clear this data if the device runs low on space.${usage}`;
+        el.className = 'text-[11px] mb-2 ' + (granted ? 'text-emerald-400' : 'text-amber-400');
+      } catch (err) {
+        el.textContent = 'Could not check storage durability. Keep a downloaded backup.';
+        el.className = 'text-[11px] text-slate-400 mb-2';
+      }
     }
 
     // ---------- Wiring ----------
@@ -1087,6 +1276,13 @@
     $('profileForm').addEventListener('submit', saveHeight);
     $('exportBtn').addEventListener('click', exportToCSV);
     $('exportBtn2').addEventListener('click', exportToCSV);
+    $('backupBtn').addEventListener('click', downloadBackup);
+    $('restoreBtn').addEventListener('click', () => $('restoreFile').click());
+    $('restoreFile').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) restoreBackup(file);
+      e.target.value = '';
+    });
     $('confirmCancel').addEventListener('click', closeConfirm);
     $('confirmDelete').addEventListener('click', performDelete);
     $('confirmModal').addEventListener('click', (e) => { if (e.target.id === 'confirmModal') closeConfirm(); });
@@ -1095,6 +1291,7 @@
     renderRangeTabs();
     render();
     setPage('home');
+    initStorageDurability();
 
     // Offline support + install prompt. Registration failure is non-fatal:
     // the app still works, it just will not run offline.
