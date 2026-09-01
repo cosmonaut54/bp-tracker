@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#1e293b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -14,202 +14,319 @@
   <link rel="icon" type="image/svg+xml" href="./icon.svg" />
   <link rel="apple-touch-icon" href="./icon.svg" />
 
-  <!-- Tailwind CSS CDN for styling -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js for data visualization -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body { -webkit-tap-highlight-color: transparent; }
+    /* Clear the fixed nav, plus the iOS home indicator */
+    .page-wrap { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+    #bottomNav { padding-bottom: env(safe-area-inset-bottom); }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans antialiased">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
 
-  <div class="max-w-md mx-auto px-4 py-6">
-    <!-- Header -->
+  <div class="max-w-md mx-auto px-4 py-6 page-wrap">
+
     <header class="flex justify-between items-center mb-6">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-white">BP Tracker</h1>
-        <p class="text-xs text-slate-400">Cardiovascular Log &amp; Trends</p>
+        <h1 id="pageTitle" class="text-2xl font-bold tracking-tight text-white">Today</h1>
+        <p id="pageSubtitle" class="text-xs text-slate-400">All times Eastern</p>
       </div>
       <button id="exportBtn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
         Export CSV
       </button>
     </header>
 
-    <!-- Quick Add -->
-    <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-5 border border-slate-700/60 shadow-xl mb-6">
-      <div class="flex justify-between items-baseline mb-3">
-        <h2 class="text-sm font-semibold text-slate-300">Log Entry</h2>
-        <span class="text-[10px] text-slate-500">Blood pressure, weight, or both</span>
+    <!-- ================= HOME ================= -->
+    <section id="page-home">
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div id="homeBpCard" class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-xl"></div>
+        <div id="homeWeightCard" class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-xl"></div>
       </div>
 
-      <form id="entryForm" class="space-y-4">
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label for="systolic" class="block text-xs font-medium text-slate-400 mb-1">Systolic</label>
-            <input type="number" id="systolic" placeholder="120" min="50" max="260" inputmode="numeric"
-                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
-          </div>
-          <div>
-            <label for="diastolic" class="block text-xs font-medium text-slate-400 mb-1">Diastolic</label>
-            <input type="number" id="diastolic" placeholder="80" min="30" max="180" inputmode="numeric"
-                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
-          </div>
-          <div>
-            <label for="pulse" class="block text-xs font-medium text-slate-400 mb-1">Pulse</label>
-            <input type="number" id="pulse" placeholder="70" min="30" max="220" inputmode="numeric"
-                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
-          </div>
+      <p id="homeAverage" class="text-[11px] text-slate-500 mb-5 px-1"></p>
+
+      <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-5 border border-slate-700/60 shadow-xl">
+        <div class="flex justify-between items-baseline mb-3">
+          <h2 class="text-sm font-semibold text-slate-300">Quick Add</h2>
+          <span class="text-[10px] text-slate-500">Pressure, weight, or both</span>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label for="weight" class="block text-xs font-medium text-slate-400 mb-1">Weight (lbs)</label>
-            <input type="number" id="weight" placeholder="175" min="50" max="700" step="0.1" inputmode="decimal"
-                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+        <form id="formHome" class="space-y-4">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label for="sysHome" class="block text-xs font-medium text-slate-400 mb-1">Systolic</label>
+              <input type="number" id="sysHome" placeholder="120" min="50" max="260" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label for="diaHome" class="block text-xs font-medium text-slate-400 mb-1">Diastolic</label>
+              <input type="number" id="diaHome" placeholder="80" min="30" max="180" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label for="pulseHome" class="block text-xs font-medium text-slate-400 mb-1">Pulse</label>
+              <input type="number" id="pulseHome" placeholder="70" min="30" max="220" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
           </div>
-          <div class="col-span-2">
-            <label for="notes" class="block text-xs font-medium text-slate-400 mb-1">Notes (optional)</label>
-            <input type="text" id="notes" placeholder="e.g., morning, after coffee"
+
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label for="weightHome" class="block text-xs font-medium text-slate-400 mb-1">Weight</label>
+              <input type="number" id="weightHome" placeholder="175" min="50" max="700" step="0.1" inputmode="decimal"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div class="col-span-2">
+              <label for="notesHome" class="block text-xs font-medium text-slate-400 mb-1">Notes (optional)</label>
+              <input type="text" id="notesHome" placeholder="e.g., morning, after coffee"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+
+          <p id="errHome" class="hidden text-xs text-rose-400"></p>
+
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-medium py-2.5 rounded-xl transition duration-150 shadow-lg shadow-blue-600/20 text-sm">
+            Save Entry
+          </button>
+        </form>
+      </div>
+
+      <div class="mt-6">
+        <h2 class="text-sm font-semibold text-slate-300 px-1 mb-2">Recent</h2>
+        <div id="homeRecent" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- ================= BLOOD PRESSURE ================= -->
+    <section id="page-bp" class="hidden">
+      <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-5 border border-slate-700/60 shadow-xl mb-5">
+        <h2 class="text-sm font-semibold text-slate-300 mb-3">Log Reading</h2>
+        <form id="formBp" class="space-y-4">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label for="sysBp" class="block text-xs font-medium text-slate-400 mb-1">Systolic</label>
+              <input type="number" id="sysBp" placeholder="120" min="50" max="260" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label for="diaBp" class="block text-xs font-medium text-slate-400 mb-1">Diastolic</label>
+              <input type="number" id="diaBp" placeholder="80" min="30" max="180" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label for="pulseBp" class="block text-xs font-medium text-slate-400 mb-1">Pulse</label>
+              <input type="number" id="pulseBp" placeholder="70" min="30" max="220" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+          <div>
+            <label for="notesBp" class="block text-xs font-medium text-slate-400 mb-1">Notes (optional)</label>
+            <input type="text" id="notesBp" placeholder="e.g., morning, after coffee"
                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
           </div>
+          <p id="errBp" class="hidden text-xs text-rose-400"></p>
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-medium py-2.5 rounded-xl transition duration-150 shadow-lg shadow-blue-600/20 text-sm">
+            Save Reading
+          </button>
+        </form>
+      </div>
+
+      <div id="rangeTabsBp" class="grid grid-cols-5 gap-1 mb-4 bg-slate-900/70 p-1 rounded-xl border border-slate-700/50"></div>
+
+      <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-xl mb-6">
+        <div class="flex justify-between items-baseline mb-3">
+          <h2 class="text-sm font-semibold text-slate-300">Trend</h2>
+          <span id="rangeCount" class="text-[10px] text-slate-500"></span>
         </div>
-
-        <p id="formError" class="hidden text-xs text-rose-400"></p>
-
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-medium py-2.5 rounded-xl transition duration-150 shadow-lg shadow-blue-600/20 text-sm">
-          Save Entry
-        </button>
-      </form>
-    </div>
-
-    <!-- Range selector, shared by both charts -->
-    <div id="rangeTabs" class="grid grid-cols-5 gap-1 mb-4 bg-slate-900/70 p-1 rounded-xl border border-slate-700/50"></div>
-
-    <!-- Blood Pressure Trend -->
-    <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-xl mb-6">
-      <div class="flex justify-between items-baseline mb-3">
-        <h2 class="text-sm font-semibold text-slate-300">Blood Pressure</h2>
-        <span id="rangeCount" class="text-[10px] text-slate-500"></span>
-      </div>
-
-      <div class="h-52 relative">
-        <canvas id="trendChart"></canvas>
-        <div id="chartEmpty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-500">
-          No readings in this range
+        <div class="h-52 relative">
+          <canvas id="trendChart"></canvas>
+          <div id="chartEmpty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-500">
+            No readings in this range
+          </div>
         </div>
+        <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
+          Dashed lines mark the healthy ceiling &mdash; 120 systolic, 80 diastolic. Staying below both is the target.
+        </p>
       </div>
 
-      <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
-        Dashed lines mark the healthy ceiling &mdash; 120 systolic, 80 diastolic. Staying below both is the target.
-      </p>
-    </div>
-
-    <!-- Weight & BMI -->
-    <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-xl mb-6">
-      <div class="flex justify-between items-baseline mb-3">
-        <h2 class="text-sm font-semibold text-slate-300">Weight &amp; BMI</h2>
-        <span id="weightCount" class="text-[10px] text-slate-500"></span>
-      </div>
-
-      <div id="weightStats" class="grid grid-cols-3 gap-2 mb-4"></div>
-
-      <div class="h-44 relative">
-        <canvas id="weightChart"></canvas>
-        <div id="weightEmpty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-500">
-          No weigh-ins in this range
-        </div>
-      </div>
-
-      <p id="weightCaption" class="text-[10px] text-slate-500 mt-3 leading-relaxed"></p>
-
-      <div id="bmiScale" class="mt-4"></div>
-
-      <p id="weightNote" class="text-[10px] text-slate-500 mt-3 leading-relaxed"></p>
-    </div>
-
-    <!-- Blood Pressure History -->
-    <div class="space-y-3">
-      <div class="flex justify-between items-center px-1">
-        <div>
+      <div class="space-y-3">
+        <div class="flex justify-between items-center px-1">
           <h2 class="text-sm font-semibold text-slate-300">History</h2>
-          <p class="text-[10px] text-slate-500 mt-0.5">All times Eastern</p>
+          <span id="logCount" class="text-xs text-slate-500">0 records</span>
         </div>
-        <span id="logCount" class="text-xs text-slate-500">0 records</span>
-      </div>
-      <div id="historyList" class="space-y-2"></div>
-    </div>
-
-    <!-- Weight History -->
-    <div class="space-y-3 mt-6">
-      <div class="flex justify-between items-center px-1">
-        <h2 class="text-sm font-semibold text-slate-300">Weigh-ins</h2>
-        <span id="weightLogCount" class="text-xs text-slate-500">0 records</span>
-      </div>
-      <div id="weightList" class="space-y-2"></div>
-    </div>
-
-    <!-- Blood Pressure Stage Reference -->
-    <div class="mt-8 bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50">
-      <h2 class="text-sm font-semibold text-slate-300">Blood Pressure Stages</h2>
-      <p id="stageCaption" class="text-[10px] text-slate-500 mt-0.5 mb-3">
-        Ranges defined by the American Heart Association.
-      </p>
-
-      <div class="grid grid-cols-[8px_1fr_auto_auto] gap-x-2 items-center text-[9px] uppercase tracking-wider text-slate-500 pb-1.5 mb-1 border-b border-slate-700/50">
-        <span></span>
-        <span>Category</span>
-        <span class="text-right w-20">Systolic</span>
-        <span class="text-right w-20">Diastolic</span>
+        <div id="historyList" class="space-y-2"></div>
       </div>
 
-      <div id="stageTable" class="space-y-0.5"></div>
+      <div class="mt-8 bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50">
+        <h2 class="text-sm font-semibold text-slate-300">Blood Pressure Stages</h2>
+        <p id="stageCaption" class="text-[10px] text-slate-500 mt-0.5 mb-3">
+          Ranges defined by the American Heart Association.
+        </p>
+        <div class="grid grid-cols-[8px_1fr_auto_auto] gap-x-2 items-center text-[9px] uppercase tracking-wider text-slate-500 pb-1.5 mb-1 border-b border-slate-700/50">
+          <span></span><span>Category</span>
+          <span class="text-right w-20">Systolic</span>
+          <span class="text-right w-20">Diastolic</span>
+        </div>
+        <div id="stageTable" class="space-y-0.5"></div>
+        <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
+          Stage 1 and Stage 2 are met if <em>either</em> number is in range. A crisis reading
+          warrants immediate medical attention, not a wait-and-see.
+        </p>
+      </div>
+    </section>
 
-      <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
-        Stage 1 and Stage 2 are met if <em>either</em> number is in range. A crisis reading
-        warrants immediate medical attention, not a wait-and-see.
-      </p>
-    </div>
-
-    <!-- Profile -->
-    <div class="mt-6 bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50">
-      <h2 class="text-sm font-semibold text-slate-300">Profile</h2>
-      <p class="text-[10px] text-slate-500 mt-0.5 mb-3">
-        Stored on this device only. Height drives the BMI calculation; sex is recorded
-        for your CSV export.
-      </p>
-
-      <form id="profileForm" class="space-y-3">
-        <div class="flex items-end gap-3">
-          <div class="w-20">
-            <label for="heightFt" class="block text-xs font-medium text-slate-400 mb-1">Feet</label>
-            <input type="number" id="heightFt" placeholder="5" min="3" max="8" inputmode="numeric"
-                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-base font-semibold text-white focus:outline-none focus:border-blue-500" />
+    <!-- ================= WEIGHT ================= -->
+    <section id="page-weight" class="hidden">
+      <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-5 border border-slate-700/60 shadow-xl mb-5">
+        <h2 class="text-sm font-semibold text-slate-300 mb-3">Log Weigh-in</h2>
+        <form id="formWeight" class="space-y-4">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label for="weightWt" class="block text-xs font-medium text-slate-400 mb-1">Weight (lbs)</label>
+              <input type="number" id="weightWt" placeholder="175" min="50" max="700" step="0.1" inputmode="decimal"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div class="col-span-2">
+              <label for="notesWt" class="block text-xs font-medium text-slate-400 mb-1">Notes (optional)</label>
+              <input type="text" id="notesWt" placeholder="e.g., before breakfast"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+            </div>
           </div>
-          <div class="w-20">
-            <label for="heightIn" class="block text-xs font-medium text-slate-400 mb-1">Inches</label>
-            <input type="number" id="heightIn" placeholder="7" min="0" max="11" inputmode="numeric"
-                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-base font-semibold text-white focus:outline-none focus:border-blue-500" />
-          </div>
-          <div class="flex-1">
-            <label for="sex" class="block text-xs font-medium text-slate-400 mb-1">Sex</label>
-            <select id="sex"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="unspecified">Not specified</option>
-            </select>
+          <p id="errWt" class="hidden text-xs text-rose-400"></p>
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-medium py-2.5 rounded-xl transition duration-150 shadow-lg shadow-emerald-600/20 text-sm">
+            Save Weigh-in
+          </button>
+        </form>
+      </div>
+
+      <div id="rangeTabsWt" class="grid grid-cols-5 gap-1 mb-4 bg-slate-900/70 p-1 rounded-xl border border-slate-700/50"></div>
+
+      <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-xl mb-6">
+        <div class="flex justify-between items-baseline mb-3">
+          <h2 class="text-sm font-semibold text-slate-300">Weight &amp; BMI</h2>
+          <span id="weightCount" class="text-[10px] text-slate-500"></span>
+        </div>
+
+        <div id="weightStats" class="grid grid-cols-3 gap-2 mb-4"></div>
+
+        <div class="h-44 relative">
+          <canvas id="weightChart"></canvas>
+          <div id="weightEmpty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-500">
+            No weigh-ins in this range
           </div>
         </div>
-        <button type="submit" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl transition text-sm">
-          Save Profile
+
+        <p id="weightCaption" class="text-[10px] text-slate-500 mt-3 leading-relaxed"></p>
+        <div id="bmiScale" class="mt-4"></div>
+        <p id="weightNote" class="text-[10px] text-slate-500 mt-3 leading-relaxed"></p>
+      </div>
+
+      <div class="space-y-3">
+        <div class="flex justify-between items-center px-1">
+          <h2 class="text-sm font-semibold text-slate-300">Weigh-ins</h2>
+          <span id="weightLogCount" class="text-xs text-slate-500">0 records</span>
+        </div>
+        <div id="weightList" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- ================= PROFILE ================= -->
+    <section id="page-profile" class="hidden">
+      <div class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50 mb-5">
+        <h2 class="text-sm font-semibold text-slate-300">Your Details</h2>
+        <p class="text-[10px] text-slate-500 mt-0.5 mb-3">
+          Stored on this device only. Height drives the BMI calculation; sex is recorded
+          for your CSV export.
+        </p>
+
+        <form id="profileForm" class="space-y-3">
+          <div class="flex items-end gap-3">
+            <div class="w-20">
+              <label for="heightFt" class="block text-xs font-medium text-slate-400 mb-1">Feet</label>
+              <input type="number" id="heightFt" placeholder="5" min="3" max="8" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-base font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div class="w-20">
+              <label for="heightIn" class="block text-xs font-medium text-slate-400 mb-1">Inches</label>
+              <input type="number" id="heightIn" placeholder="7" min="0" max="11" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-base font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div class="flex-1">
+              <label for="sex" class="block text-xs font-medium text-slate-400 mb-1">Sex</label>
+              <select id="sex"
+                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="unspecified">Not specified</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl transition text-sm">
+            Save Profile
+          </button>
+        </form>
+
+        <p id="profileSummary" class="text-[11px] text-slate-400 mt-3"></p>
+      </div>
+
+      <div class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50 mb-5">
+        <h2 class="text-sm font-semibold text-slate-300 mb-3">Your Data</h2>
+        <div id="dataStats" class="grid grid-cols-3 gap-2 mb-4"></div>
+        <button id="exportBtn2" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl transition text-sm">
+          Export CSV
         </button>
-      </form>
+        <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
+          Everything lives in this browser's local storage on this device. Nothing is uploaded,
+          and there is no account. Clearing site data or deleting the app removes it, so export
+          a CSV before you switch phones.
+        </p>
+      </div>
 
-      <p id="profileSummary" class="text-[11px] text-slate-400 mt-3"></p>
-    </div>
+      <div class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50">
+        <h2 class="text-sm font-semibold text-slate-300 mb-2">About</h2>
+        <p class="text-[10px] text-slate-500 leading-relaxed">
+          Blood pressure categories follow the American Heart Association. BMI uses the standard
+          703 &times; lbs / inches&sup2; formula, with the same cutoffs for adult men and women.
+          This app records and charts what you enter; it does not diagnose anything, and it is not
+          a substitute for your doctor's reading.
+        </p>
+      </div>
+    </section>
   </div>
+
+  <!-- ================= BOTTOM NAV ================= -->
+  <nav id="bottomNav" class="fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur border-t border-slate-700/60">
+    <div class="max-w-md mx-auto grid grid-cols-4">
+      <button type="button" data-page="home" class="nav-btn flex flex-col items-center gap-0.5 py-2.5 transition">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+          <path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9.8V20h13V9.8" />
+        </svg>
+        <span class="text-[10px] font-medium">Home</span>
+      </button>
+      <button type="button" data-page="bp" class="nav-btn flex flex-col items-center gap-0.5 py-2.5 transition">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+          <path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21l8.8-8.3a5 5 0 0 0 0-7.1z" />
+          <path d="M3.5 12.5h4l1.5-2.5 2 5 1.5-3h4" />
+        </svg>
+        <span class="text-[10px] font-medium">Pressure</span>
+      </button>
+      <button type="button" data-page="weight" class="nav-btn flex flex-col items-center gap-0.5 py-2.5 transition">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+          <path d="M4.5 16.5a7.5 7.5 0 1 1 15 0" /><path d="M12 16.5 15.5 11" />
+          <rect x="2.5" y="16.5" width="19" height="4.5" rx="1.6" />
+        </svg>
+        <span class="text-[10px] font-medium">Weight</span>
+      </button>
+      <button type="button" data-page="profile" class="nav-btn flex flex-col items-center gap-0.5 py-2.5 transition">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+          <circle cx="12" cy="8.5" r="3.6" /><path d="M5 20a7 7 0 0 1 14 0" />
+        </svg>
+        <span class="text-[10px] font-medium">Profile</span>
+      </button>
+    </div>
+  </nav>
 
   <!-- Delete confirmation -->
   <div id="confirmModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/70 backdrop-blur-sm p-6">
@@ -217,12 +334,8 @@
       <h3 class="text-sm font-semibold text-white mb-1">Delete this entry?</h3>
       <p id="confirmDetail" class="text-xs text-slate-400 mb-4"></p>
       <div class="flex gap-2">
-        <button type="button" id="confirmCancel" class="flex-1 py-2.5 rounded-xl text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
-          Cancel
-        </button>
-        <button type="button" id="confirmDelete" class="flex-1 py-2.5 rounded-xl text-xs font-medium bg-red-600 hover:bg-red-500 text-white transition">
-          Delete
-        </button>
+        <button type="button" id="confirmCancel" class="flex-1 py-2.5 rounded-xl text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition">Cancel</button>
+        <button type="button" id="confirmDelete" class="flex-1 py-2.5 rounded-xl text-xs font-medium bg-red-600 hover:bg-red-500 text-white transition">Delete</button>
       </div>
     </div>
   </div>
@@ -235,9 +348,9 @@
     let bpChart = null;
     let weightChartInstance = null;
 
-    // Entries are stored as UTC ISO strings and always DISPLAYED in Eastern time,
-    // so a reading logged at 9am at home still reads 9am if you open this elsewhere.
-    // 'America/New_York' (not the fixed offset 'EST') so EDT/EST switches automatically.
+    // Entries store UTC ISO strings and always DISPLAY in Eastern time, so a reading
+    // logged at 9am at home still reads 9am if you open this elsewhere.
+    // 'America/New_York' (not fixed-offset 'EST') so EDT/EST switches automatically.
     const TZ = 'America/New_York';
     const fmtDayLong  = new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', month: 'short', day: 'numeric' });
     const fmtDayShort = new Intl.DateTimeFormat('en-US', { timeZone: TZ, month: 'numeric', day: 'numeric' });
@@ -245,9 +358,10 @@
     const fmtCsvDate  = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
     const fmtYear     = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric' });
 
+    const $ = (id) => document.getElementById(id);
+
     // ---------- Classification ----------
 
-    // AHA/ACC blood pressure classification
     function classifyBP(sys, dia) {
       if (sys > 180 || dia > 120) return { key: 'crisis', label: 'Crisis', color: 'bg-red-950 text-red-400 border-red-800' };
       if (sys >= 140 || dia >= 90) return { key: 'stage2', label: 'Stage 2', color: 'bg-rose-900/60 text-rose-300 border-rose-700' };
@@ -264,22 +378,20 @@
       { key: 'crisis',   label: 'Crisis',   sys: 'Over 180',  dia: 'Over 120',  bar: 'bg-red-600' }
     ];
 
-    // BMI = 703 x pounds / inches squared
     function calcBMI(lbs, heightIn) {
       if (!lbs || !heightIn) return null;
       return (703 * lbs) / (heightIn * heightIn);
     }
+    function weightAtBMI(bmi, heightIn) { return (bmi * heightIn * heightIn) / 703; }
+    function formatHeight(heightIn) { return `${Math.floor(heightIn / 12)}\u2032${heightIn % 12}\u2033`; }
 
     const BMI_BANDS = [
-      { key: 'under',  label: 'Underweight', range: 'Under 18.5', max: 18.5, bar: 'bg-sky-500',     color: 'bg-sky-950 text-sky-400 border-sky-800' },
-      { key: 'normal', label: 'Normal',      range: '18.5 – 24.9', max: 25,  bar: 'bg-emerald-500', color: 'bg-emerald-950 text-emerald-400 border-emerald-800' },
-      { key: 'over',   label: 'Overweight',  range: '25.0 – 29.9', max: 30,  bar: 'bg-amber-500',   color: 'bg-amber-900/60 text-amber-300 border-amber-700' },
-      { key: 'obese',  label: 'Obese',       range: '30.0 +',      max: Infinity, bar: 'bg-rose-500', color: 'bg-rose-900/60 text-rose-300 border-rose-700' }
+      { key: 'under',  label: 'Underweight', range: 'Under 18.5',  max: 18.5,     bar: 'bg-sky-500',     color: 'bg-sky-950 text-sky-400 border-sky-800' },
+      { key: 'normal', label: 'Normal',      range: '18.5 – 24.9', max: 25,       bar: 'bg-emerald-500', color: 'bg-emerald-950 text-emerald-400 border-emerald-800' },
+      { key: 'over',   label: 'Overweight',  range: '25.0 – 29.9', max: 30,       bar: 'bg-amber-500',   color: 'bg-amber-900/60 text-amber-300 border-amber-700' },
+      { key: 'obese',  label: 'Obese',       range: '30.0 +',      max: Infinity, bar: 'bg-rose-500',    color: 'bg-rose-900/60 text-rose-300 border-rose-700' }
     ];
-
-    function classifyBMI(bmi) {
-      return BMI_BANDS.find(b => bmi < b.max) || BMI_BANDS[BMI_BANDS.length - 1];
-    }
+    function classifyBMI(bmi) { return BMI_BANDS.find(b => bmi < b.max) || BMI_BANDS[BMI_BANDS.length - 1]; }
 
     // ---------- Ranges ----------
 
@@ -314,27 +426,17 @@
     const getBP      = () => readList(KEY_BP);
     const getWeights = () => readList(KEY_WEIGHT);
 
-    // Prefilled so the BMI reference line is visible on first open. Editable in Profile.
+    // Prefilled so BMI works on first open. Editable on the Profile page.
     const DEFAULT_PROFILE = { heightIn: 67, sex: 'male' };
+    const SEX_LABELS = { male: 'Male', female: 'Female', unspecified: 'Not specified' };
 
     function getProfile() {
       try {
         const stored = JSON.parse(localStorage.getItem(KEY_PROFILE) || 'null');
         return stored ? Object.assign({}, DEFAULT_PROFILE, stored) : Object.assign({}, DEFAULT_PROFILE);
-      } catch (err) {
-        return Object.assign({}, DEFAULT_PROFILE);
-      }
+      } catch (err) { return Object.assign({}, DEFAULT_PROFILE); }
     }
-
-    // Weight at a given BMI for a given height, the inverse of calcBMI.
-    function weightAtBMI(bmi, heightIn) {
-      return (bmi * heightIn * heightIn) / 703;
-    }
-
-    function formatHeight(heightIn) {
-      return `${Math.floor(heightIn / 12)}\u2032${heightIn % 12}\u2033`;
-    }
-    function saveProfile(profile) { localStorage.setItem(KEY_PROFILE, JSON.stringify(profile)); }
+    function saveProfile(p) { localStorage.setItem(KEY_PROFILE, JSON.stringify(p)); }
 
     // Notes are user text rendered via innerHTML -- escape before injecting.
     function escapeHTML(str) {
@@ -343,35 +445,73 @@
       }[ch]));
     }
 
-    // ---------- Adding entries ----------
+    // ---------- Pages ----------
 
-    function showFormError(msg) {
-      const el = document.getElementById('formError');
-      el.textContent = msg;
-      el.classList.remove('hidden');
-    }
-    function clearFormError() {
-      document.getElementById('formError').classList.add('hidden');
+    const PAGES = {
+      home:    { title: 'Today',          subtitle: 'All times Eastern' },
+      bp:      { title: 'Blood Pressure', subtitle: 'Readings and trend' },
+      weight:  { title: 'Weight',         subtitle: 'Weigh-ins and BMI' },
+      profile: { title: 'Profile',        subtitle: 'Details and data' }
+    };
+    let activePage = 'home';
+
+    function setPage(key) {
+      if (!PAGES[key]) key = 'home';
+      activePage = key;
+
+      Object.keys(PAGES).forEach(k => {
+        $(`page-${k}`).classList.toggle('hidden', k !== key);
+      });
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const on = btn.dataset.page === key;
+        btn.classList.toggle('text-blue-400', on);
+        btn.classList.toggle('text-slate-500', !on);
+      });
+
+      $('pageTitle').textContent = PAGES[key].title;
+      $('pageSubtitle').textContent = PAGES[key].subtitle;
+      $('exportBtn').classList.toggle('hidden', key === 'profile');
+      window.scrollTo(0, 0);
+
+      // Canvases have no size while their page is hidden, so charts are (re)built
+      // when their page becomes visible.
+      if (key === 'bp') updateBPChart(getBP());
+      if (key === 'weight') updateWeightChart(getWeights(), getProfile().heightIn || null);
     }
 
-    function addEntry(e) {
+    // ---------- Entry forms ----------
+
+    const FORMS = [
+      { form: 'formHome',   sys: 'sysHome', dia: 'diaHome', pulse: 'pulseHome', weight: 'weightHome', notes: 'notesHome', err: 'errHome' },
+      { form: 'formBp',     sys: 'sysBp',   dia: 'diaBp',   pulse: 'pulseBp',   weight: null,        notes: 'notesBp',   err: 'errBp' },
+      { form: 'formWeight', sys: null,      dia: null,      pulse: null,        weight: 'weightWt',  notes: 'notesWt',   err: 'errWt' }
+    ];
+
+    const fieldValue = (id) => (id && $(id) ? $(id).value.trim() : '');
+
+    function addEntry(cfg, e) {
       e.preventDefault();
-      clearFormError();
+      const errEl = $(cfg.err);
+      errEl.classList.add('hidden');
+      const fail = (msg) => { errEl.textContent = msg; errEl.classList.remove('hidden'); };
 
-      const rawSys = document.getElementById('systolic').value.trim();
-      const rawDia = document.getElementById('diastolic').value.trim();
-      const rawPulse = document.getElementById('pulse').value.trim();
-      const rawWeight = document.getElementById('weight').value.trim();
-      const notes = document.getElementById('notes').value.trim();
+      const rawSys = fieldValue(cfg.sys);
+      const rawDia = fieldValue(cfg.dia);
+      const rawPulse = fieldValue(cfg.pulse);
+      const rawWeight = fieldValue(cfg.weight);
+      const notes = fieldValue(cfg.notes);
 
       const hasBP = rawSys !== '' || rawDia !== '';
       const hasWeight = rawWeight !== '';
 
       if (!hasBP && !hasWeight) {
-        return showFormError('Enter a blood pressure reading, a weight, or both.');
+        return fail(cfg.weight && cfg.sys ? 'Enter a blood pressure reading, a weight, or both.'
+                  : cfg.sys ? 'Enter a systolic and diastolic reading.'
+                  : 'Enter a weight.');
       }
       if (hasBP && (rawSys === '' || rawDia === '')) {
-        return showFormError('Blood pressure needs both systolic and diastolic.');
+        return fail('Blood pressure needs both systolic and diastolic.');
       }
 
       const timestamp = new Date().toISOString();
@@ -380,8 +520,7 @@
       if (hasBP) {
         const bp = getBP();
         bp.unshift({
-          id,
-          timestamp,
+          id, timestamp,
           sys: parseInt(rawSys, 10),
           dia: parseInt(rawDia, 10),
           pulse: rawPulse === '' ? null : parseInt(rawPulse, 10),
@@ -389,7 +528,6 @@
         });
         writeList(KEY_BP, bp);
       }
-
       if (hasWeight) {
         const weights = getWeights();
         weights.unshift({
@@ -401,29 +539,25 @@
         writeList(KEY_WEIGHT, weights);
       }
 
-      document.getElementById('entryForm').reset();
+      $(cfg.form).reset();
       render();
     }
 
-    // ---------- Deleting, with confirmation ----------
+    // ---------- Delete, with confirmation ----------
 
     let pendingDelete = null;
 
     function askDelete(kind, id, detail) {
       pendingDelete = { kind, id };
-      document.getElementById('confirmDetail').textContent = detail;
-      const modal = document.getElementById('confirmModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      $('confirmDetail').textContent = detail;
+      $('confirmModal').classList.remove('hidden');
+      $('confirmModal').classList.add('flex');
     }
-
     function closeConfirm() {
       pendingDelete = null;
-      const modal = document.getElementById('confirmModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      $('confirmModal').classList.add('hidden');
+      $('confirmModal').classList.remove('flex');
     }
-
     function performDelete() {
       if (!pendingDelete) return;
       const { kind, id } = pendingDelete;
@@ -432,7 +566,6 @@
       closeConfirm();
       render();
     }
-
     function deleteButton(onClick) {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -451,8 +584,7 @@
       plugins: {
         legend: {
           labels: {
-            color: '#94a3b8',
-            font: { size: 11 },
+            color: '#94a3b8', font: { size: 11 },
             filter: (item, data) => !data.datasets[item.datasetIndex].isThreshold
           }
         },
@@ -469,10 +601,8 @@
       scales: {
         x: { ticks: { color: '#64748b', font: { size: 9 }, maxRotation: 0, autoSkipPadding: 8 }, grid: { display: false } },
         y: {
-          suggestedMin: yMin,
-          suggestedMax: yMax,
-          ticks: { color: '#64748b', font: { size: 10 } },
-          grid: { color: '#334155' }
+          suggestedMin: yMin, suggestedMax: yMax,
+          ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#334155' }
         }
       }
     });
@@ -484,75 +614,50 @@
         return dense ? fmtDayShort.format(d) : [fmtDayShort.format(d), fmtClock.format(d)];
       });
     }
-
     const pointSizeFor = (n) => (n > 40 ? 0 : n > 20 ? 2 : 4);
 
     function updateBPChart(logs) {
-      const ctx = document.getElementById('trendChart').getContext('2d');
-      const emptyEl = document.getElementById('chartEmpty');
+      const canvas = $('trendChart');
+      if (!canvas) return;
       const recent = inRange(logs, activeRange).slice().reverse();
-
-      document.getElementById('rangeCount').textContent =
-        `${recent.length} reading${recent.length === 1 ? '' : 's'}`;
+      $('rangeCount').textContent = `${recent.length} reading${recent.length === 1 ? '' : 's'}`;
 
       if (bpChart) { bpChart.destroy(); bpChart = null; }
-      if (!recent.length) { emptyEl.classList.remove('hidden'); return; }
-      emptyEl.classList.add('hidden');
+      if (!recent.length) { $('chartEmpty').classList.remove('hidden'); return; }
+      $('chartEmpty').classList.add('hidden');
 
       const sysData = recent.map(r => r.sys);
       const diaData = recent.map(r => r.dia);
       const pointRadius = pointSizeFor(recent.length);
 
-      bpChart = new Chart(ctx, {
+      bpChart = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {
           labels: buildLabels(recent),
           datasets: [
-            {
-              label: 'Healthy systolic limit',
-              data: new Array(recent.length).fill(120),
-              borderColor: 'rgba(56, 189, 248, 0.40)',
-              borderWidth: 1.5, borderDash: [5, 5],
-              pointRadius: 0, pointHitRadius: 0, tension: 0, isThreshold: true
-            },
-            {
-              label: 'Healthy diastolic limit',
-              data: new Array(recent.length).fill(80),
-              borderColor: 'rgba(168, 85, 247, 0.40)',
-              borderWidth: 1.5, borderDash: [5, 5],
-              pointRadius: 0, pointHitRadius: 0, tension: 0, isThreshold: true
-            },
-            {
-              label: 'Systolic', data: sysData,
-              borderColor: '#38bdf8', backgroundColor: '#38bdf8',
-              tension: 0.3, pointRadius
-            },
-            {
-              label: 'Diastolic', data: diaData,
-              borderColor: '#a855f7', backgroundColor: '#a855f7',
-              tension: 0.3, pointRadius
-            }
+            { label: 'Healthy systolic limit', data: new Array(recent.length).fill(120),
+              borderColor: 'rgba(56, 189, 248, 0.40)', borderWidth: 1.5, borderDash: [5, 5],
+              pointRadius: 0, pointHitRadius: 0, tension: 0, isThreshold: true },
+            { label: 'Healthy diastolic limit', data: new Array(recent.length).fill(80),
+              borderColor: 'rgba(168, 85, 247, 0.40)', borderWidth: 1.5, borderDash: [5, 5],
+              pointRadius: 0, pointHitRadius: 0, tension: 0, isThreshold: true },
+            { label: 'Systolic', data: sysData, borderColor: '#38bdf8', backgroundColor: '#38bdf8', tension: 0.3, pointRadius },
+            { label: 'Diastolic', data: diaData, borderColor: '#a855f7', backgroundColor: '#a855f7', tension: 0.3, pointRadius }
           ]
         },
-        options: baseChartOptions(
-          recent,
-          Math.max(40, Math.min(60, ...diaData) - 10),
-          Math.max(140, ...sysData) + 10
-        )
+        options: baseChartOptions(recent, Math.max(40, Math.min(60, ...diaData) - 10), Math.max(140, ...sysData) + 10)
       });
     }
 
     function updateWeightChart(weights, heightIn) {
-      const ctx = document.getElementById('weightChart').getContext('2d');
-      const emptyEl = document.getElementById('weightEmpty');
+      const canvas = $('weightChart');
+      if (!canvas) return;
       const recent = inRange(weights, activeRange).slice().reverse();
-
-      document.getElementById('weightCount').textContent =
-        `${recent.length} weigh-in${recent.length === 1 ? '' : 's'}`;
+      $('weightCount').textContent = `${recent.length} weigh-in${recent.length === 1 ? '' : 's'}`;
 
       if (weightChartInstance) { weightChartInstance.destroy(); weightChartInstance = null; }
-      if (!recent.length) { emptyEl.classList.remove('hidden'); return; }
-      emptyEl.classList.add('hidden');
+      if (!recent.length) { $('weightEmpty').classList.remove('hidden'); return; }
+      $('weightEmpty').classList.add('hidden');
 
       const lbsData = recent.map(r => r.lbs);
       const datasets = [{
@@ -561,24 +666,20 @@
         tension: 0.3, pointRadius: pointSizeFor(recent.length)
       }];
 
-      // With a height on file, the top of the normal BMI band is a meaningful
-      // horizontal reference, the same way 120/80 is for blood pressure.
       let ceiling = null;
       if (heightIn) {
         ceiling = weightAtBMI(25, heightIn);
         datasets.unshift({
-          label: 'BMI 25',
-          data: new Array(recent.length).fill(Math.round(ceiling * 10) / 10),
-          borderColor: 'rgba(52, 211, 153, 0.40)',
-          borderWidth: 1.5, borderDash: [5, 5],
+          label: 'BMI 25', data: new Array(recent.length).fill(Math.round(ceiling * 10) / 10),
+          borderColor: 'rgba(52, 211, 153, 0.40)', borderWidth: 1.5, borderDash: [5, 5],
           pointRadius: 0, pointHitRadius: 0, tension: 0, isThreshold: true
         });
       }
 
-      const lo = Math.min(...lbsData, ceiling || Infinity);
-      const hi = Math.max(...lbsData, ceiling || -Infinity);
+      const lo = Math.min(...lbsData, ceiling === null ? Infinity : ceiling);
+      const hi = Math.max(...lbsData, ceiling === null ? -Infinity : ceiling);
 
-      weightChartInstance = new Chart(ctx, {
+      weightChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: { labels: buildLabels(recent), datasets },
         options: baseChartOptions(recent, Math.floor(lo - 5), Math.ceil(hi + 5))
@@ -588,22 +689,26 @@
     // ---------- Rendering ----------
 
     function renderRangeTabs() {
-      const wrap = document.getElementById('rangeTabs');
-      wrap.innerHTML = '';
-      RANGES.forEach(r => {
-        const on = r.key === activeRange;
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = r.label;
-        b.className = 'py-1.5 rounded-lg text-[11px] font-medium transition ' +
-          (on ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200');
-        b.addEventListener('click', () => {
-          activeRange = r.key;
-          renderRangeTabs();
-          updateBPChart(getBP());
-          updateWeightChart(getWeights(), getProfile().heightIn || null);
+      ['rangeTabsBp', 'rangeTabsWt'].forEach(containerId => {
+        const wrap = $(containerId);
+        if (!wrap) return;
+        wrap.innerHTML = '';
+        RANGES.forEach(r => {
+          const on = r.key === activeRange;
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = r.label;
+          b.className = 'py-1.5 rounded-lg text-[11px] font-medium transition ' +
+            (on ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200');
+          b.addEventListener('click', () => {
+            activeRange = r.key;
+            renderRangeTabs();
+            updateBPChart(getBP());
+            updateWeightChart(getWeights(), getProfile().heightIn || null);
+            renderWeightStats(getWeights(), getProfile().heightIn || null);
+          });
+          wrap.appendChild(b);
         });
-        wrap.appendChild(b);
       });
     }
 
@@ -616,51 +721,133 @@
         </div>`;
     }
 
-    function renderWeightStats(weights, heightIn) {
-      const el = document.getElementById('weightStats');
-      const latest = weights[0] || null;
+    function renderHome(bp, weights, heightIn) {
+      const latestBP = bp[0] || null;
+      const latestWt = weights[0] || null;
 
+      if (latestBP) {
+        const cat = classifyBP(latestBP.sys, latestBP.dia);
+        const d = new Date(latestBP.timestamp);
+        $('homeBpCard').innerHTML = `
+          <div class="text-[9px] uppercase tracking-wider text-slate-500">Blood Pressure</div>
+          <div class="text-3xl font-bold text-white mt-1 leading-none">${latestBP.sys}/${latestBP.dia}</div>
+          <div class="mt-2"><span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${cat.color}">${cat.label}</span></div>
+          <div class="text-[10px] text-slate-500 mt-2">${fmtDayLong.format(d)} \u00b7 ${fmtClock.format(d)}</div>`;
+      } else {
+        $('homeBpCard').innerHTML = `
+          <div class="text-[9px] uppercase tracking-wider text-slate-500">Blood Pressure</div>
+          <div class="text-sm text-slate-500 mt-3">No readings yet</div>`;
+      }
+
+      if (latestWt) {
+        const bmi = calcBMI(latestWt.lbs, heightIn);
+        const band = bmi ? classifyBMI(bmi) : null;
+        const d = new Date(latestWt.timestamp);
+        $('homeWeightCard').innerHTML = `
+          <div class="text-[9px] uppercase tracking-wider text-slate-500">Weight</div>
+          <div class="text-3xl font-bold text-white mt-1 leading-none">${latestWt.lbs}</div>
+          <div class="mt-2">${bmi
+            ? `<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${band.color}">BMI ${bmi.toFixed(1)}</span>`
+            : '<span class="text-[10px] text-slate-500">Add height for BMI</span>'}</div>
+          <div class="text-[10px] text-slate-500 mt-2">${fmtDayLong.format(d)} \u00b7 ${fmtClock.format(d)}</div>`;
+      } else {
+        $('homeWeightCard').innerHTML = `
+          <div class="text-[9px] uppercase tracking-wider text-slate-500">Weight</div>
+          <div class="text-sm text-slate-500 mt-3">No weigh-ins yet</div>`;
+      }
+
+      // Seven-day average, which is closer to what a doctor looks at than any single reading
+      const week = inRange(bp, '7d');
+      if (week.length >= 2) {
+        const avgSys = Math.round(week.reduce((s, r) => s + r.sys, 0) / week.length);
+        const avgDia = Math.round(week.reduce((s, r) => s + r.dia, 0) / week.length);
+        $('homeAverage').textContent =
+          `7-day average: ${avgSys}/${avgDia} across ${week.length} readings \u00b7 ${classifyBP(avgSys, avgDia).label}`;
+      } else {
+        $('homeAverage').textContent = week.length === 1
+          ? '7-day average needs at least two readings.'
+          : '';
+      }
+
+      // Recent activity, both kinds, newest first
+      const merged = [
+        ...bp.map(r => ({ kind: 'bp', ...r })),
+        ...weights.map(r => ({ kind: 'weight', ...r }))
+      ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5);
+
+      const list = $('homeRecent');
+      list.innerHTML = '';
+      if (!merged.length) {
+        list.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">Nothing logged yet. Add your first entry above.</div>';
+        return;
+      }
+      merged.forEach(item => {
+        const d = new Date(item.timestamp);
+        const meta = `${fmtDayLong.format(d)} \u00b7 ${fmtClock.format(d)}`;
+        const row = document.createElement('div');
+        row.className = 'bg-slate-800/60 border border-slate-700/40 rounded-xl p-3';
+        if (item.kind === 'bp') {
+          const cat = classifyBP(item.sys, item.dia);
+          row.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="text-base font-bold text-white">${item.sys}/${item.dia}</span>
+              <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${cat.color}">${cat.label}</span>
+              ${item.pulse ? `<span class="text-xs text-slate-400">\u2665 ${item.pulse}</span>` : ''}
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>`;
+        } else {
+          const bmi = calcBMI(item.lbs, heightIn);
+          const band = bmi ? classifyBMI(bmi) : null;
+          row.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="text-base font-bold text-white">${item.lbs} lbs</span>
+              ${bmi ? `<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${band.color}">BMI ${bmi.toFixed(1)}</span>` : ''}
+            </div>
+            <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>`;
+        }
+        list.appendChild(row);
+      });
+    }
+
+    function renderWeightStats(weights, heightIn) {
+      const el = $('weightStats');
+      const latest = weights[0] || null;
       if (!latest) {
         el.innerHTML = '<div class="col-span-3 text-center py-3 text-xs text-slate-500">No weigh-ins yet. Add one above.</div>';
         return;
       }
-
       const bmi = calcBMI(latest.lbs, heightIn);
       const band = bmi ? classifyBMI(bmi) : null;
 
-      // Change across the selected range, oldest vs newest in that window
       const windowed = inRange(weights, activeRange);
       let deltaTile;
       if (windowed.length >= 2) {
-        const diff = windowed[0].lbs - windowed[windowed.length - 1].lbs;
-        const rounded = Math.round(diff * 10) / 10;
-        const tone = rounded > 0 ? 'text-amber-300' : rounded < 0 ? 'text-emerald-300' : 'text-slate-300';
-        const label = RANGES.find(r => r.key === activeRange).label;
-        deltaTile = statTile('Change', `${rounded > 0 ? '+' : ''}${rounded}`, `lbs over ${label}`, tone);
+        const diff = Math.round((windowed[0].lbs - windowed[windowed.length - 1].lbs) * 10) / 10;
+        const tone = diff > 0 ? 'text-amber-300' : diff < 0 ? 'text-emerald-300' : 'text-slate-300';
+        deltaTile = statTile('Change', `${diff > 0 ? '+' : ''}${diff}`,
+          `lbs over ${RANGES.find(r => r.key === activeRange).label}`, tone);
       } else {
-        deltaTile = statTile('Change', '—', 'needs 2 weigh-ins', 'text-slate-500');
+        deltaTile = statTile('Change', '\u2014', 'needs 2 weigh-ins', 'text-slate-500');
       }
 
       el.innerHTML =
         statTile('Latest', latest.lbs, 'lbs', 'text-white') +
-        (bmi
-          ? statTile('BMI', bmi.toFixed(1), band.label, 'text-white')
-          : statTile('BMI', '—', 'add height', 'text-slate-500')) +
+        (bmi ? statTile('BMI', bmi.toFixed(1), band.label, 'text-white')
+             : statTile('BMI', '\u2014', 'add height', 'text-slate-500')) +
         deltaTile;
     }
 
     function renderBMIScale(weights, heightIn) {
-      const el = document.getElementById('bmiScale');
-      const note = document.getElementById('weightNote');
+      const el = $('bmiScale');
+      const note = $('weightNote');
+      const caption = $('weightCaption');
       const latest = weights[0] || null;
       const bmi = latest ? calcBMI(latest.lbs, heightIn) : null;
-
-      const caption = document.getElementById('weightCaption');
 
       if (!heightIn) {
         el.innerHTML = '';
         caption.textContent = '';
-        note.textContent = 'Add your height in Profile below to see BMI alongside your weight.';
+        note.textContent = 'Add your height on the Profile page to see BMI alongside your weight.';
         return;
       }
 
@@ -690,63 +877,49 @@
     }
 
     function renderBPHistory(logs) {
-      const listEl = document.getElementById('historyList');
-      document.getElementById('logCount').textContent =
-        `${logs.length} record${logs.length === 1 ? '' : 's'}`;
+      const listEl = $('historyList');
+      $('logCount').textContent = `${logs.length} record${logs.length === 1 ? '' : 's'}`;
       listEl.innerHTML = '';
-
       if (!logs.length) {
         listEl.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">No logs yet. Add your first reading above.</div>';
         return;
       }
-
       logs.forEach(item => {
-        const date = new Date(item.timestamp);
-        const meta = `${fmtDayLong.format(date)} \u00b7 ${fmtClock.format(date)}`;
-        const category = classifyBP(item.sys, item.dia);
-
+        const d = new Date(item.timestamp);
+        const meta = `${fmtDayLong.format(d)} \u00b7 ${fmtClock.format(d)}`;
+        const cat = classifyBP(item.sys, item.dia);
         const row = document.createElement('div');
         row.className = 'bg-slate-800/60 border border-slate-700/40 rounded-xl p-3 flex justify-between items-center gap-2';
-
         const left = document.createElement('div');
         left.className = 'min-w-0';
         left.innerHTML = `
           <div class="flex items-center gap-2">
             <span class="text-base font-bold text-white">${item.sys}/${item.dia}</span>
-            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${category.color}">${category.label}</span>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${cat.color}">${cat.label}</span>
             ${item.pulse ? `<span class="text-xs text-slate-400">\u2665 ${item.pulse}</span>` : ''}
           </div>
-          <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>
-        `;
-
+          <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>`;
         row.appendChild(left);
-        row.appendChild(deleteButton(() =>
-          askDelete('bp', item.id, `${item.sys}/${item.dia} on ${meta}`)
-        ));
+        row.appendChild(deleteButton(() => askDelete('bp', item.id, `${item.sys}/${item.dia} on ${meta}`)));
         listEl.appendChild(row);
       });
     }
 
     function renderWeightHistory(weights, heightIn) {
-      const listEl = document.getElementById('weightList');
-      document.getElementById('weightLogCount').textContent =
-        `${weights.length} record${weights.length === 1 ? '' : 's'}`;
+      const listEl = $('weightList');
+      $('weightLogCount').textContent = `${weights.length} record${weights.length === 1 ? '' : 's'}`;
       listEl.innerHTML = '';
-
       if (!weights.length) {
         listEl.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">No weigh-ins yet.</div>';
         return;
       }
-
       weights.forEach(item => {
-        const date = new Date(item.timestamp);
-        const meta = `${fmtDayLong.format(date)} \u00b7 ${fmtClock.format(date)}`;
+        const d = new Date(item.timestamp);
+        const meta = `${fmtDayLong.format(d)} \u00b7 ${fmtClock.format(d)}`;
         const bmi = calcBMI(item.lbs, heightIn);
         const band = bmi ? classifyBMI(bmi) : null;
-
         const row = document.createElement('div');
         row.className = 'bg-slate-800/60 border border-slate-700/40 rounded-xl p-3 flex justify-between items-center gap-2';
-
         const left = document.createElement('div');
         left.className = 'min-w-0';
         left.innerHTML = `
@@ -754,72 +927,64 @@
             <span class="text-base font-bold text-white">${item.lbs} lbs</span>
             ${bmi ? `<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${band.color}">BMI ${bmi.toFixed(1)}</span>` : ''}
           </div>
-          <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>
-        `;
-
+          <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>`;
         row.appendChild(left);
-        row.appendChild(deleteButton(() =>
-          askDelete('weight', item.id, `${item.lbs} lbs on ${meta}`)
-        ));
+        row.appendChild(deleteButton(() => askDelete('weight', item.id, `${item.lbs} lbs on ${meta}`)));
         listEl.appendChild(row);
       });
     }
 
     function renderStages(latest) {
       const activeKey = latest ? classifyBP(latest.sys, latest.dia).key : null;
-      const table = document.getElementById('stageTable');
+      const table = $('stageTable');
       table.innerHTML = '';
       STAGES.forEach(s => {
         const on = s.key === activeKey;
         const row = document.createElement('div');
-        row.className =
-          'grid grid-cols-[8px_1fr_auto_auto] gap-x-2 items-center py-2 px-1 rounded-lg transition ' +
+        row.className = 'grid grid-cols-[8px_1fr_auto_auto] gap-x-2 items-center py-2 px-1 rounded-lg transition ' +
           (on ? 'bg-slate-700/60 ring-1 ring-slate-500/60' : '');
         row.innerHTML = `
           <span class="h-6 w-1.5 rounded-full ${s.bar} ${on ? '' : 'opacity-50'}"></span>
           <span class="text-xs ${on ? 'text-white font-semibold' : 'text-slate-300'}">${s.label}</span>
           <span class="text-[11px] text-right w-20 ${on ? 'text-slate-100' : 'text-slate-400'}">${s.sys}</span>
-          <span class="text-[11px] text-right w-20 ${on ? 'text-slate-100' : 'text-slate-400'}">${s.dia}</span>
-        `;
+          <span class="text-[11px] text-right w-20 ${on ? 'text-slate-100' : 'text-slate-400'}">${s.dia}</span>`;
         table.appendChild(row);
       });
-
-      document.getElementById('stageCaption').innerHTML = latest
+      $('stageCaption').innerHTML = latest
         ? `Ranges defined by the American Heart Association. Your latest reading &mdash; ${latest.sys}/${latest.dia} &mdash; is highlighted.`
         : 'Ranges defined by the American Heart Association.';
     }
 
-    const SEX_LABELS = { male: 'Male', female: 'Female', unspecified: 'Not specified' };
-
-    function renderProfile() {
+    function renderProfile(bp, weights) {
       const { heightIn, sex } = getProfile();
-      const summary = document.getElementById('profileSummary');
       const saved = localStorage.getItem(KEY_PROFILE) !== null;
 
-      document.getElementById('heightFt').value = Math.floor(heightIn / 12);
-      document.getElementById('heightIn').value = heightIn % 12;
-      document.getElementById('sex').value = sex;
-
-      summary.textContent =
-        `${saved ? 'Saved' : 'Default'}: ${formatHeight(heightIn)} (${heightIn} inches), ` +
-        `${SEX_LABELS[sex] || sex}.` +
+      $('heightFt').value = Math.floor(heightIn / 12);
+      $('heightIn').value = heightIn % 12;
+      $('sex').value = sex;
+      $('profileSummary').textContent =
+        `${saved ? 'Saved' : 'Default'}: ${formatHeight(heightIn)} (${heightIn} inches), ${SEX_LABELS[sex] || sex}.` +
         (saved ? '' : ' Save to confirm or change it.');
+
+      const all = [...bp, ...weights].map(r => new Date(r.timestamp).getTime());
+      const since = all.length ? fmtDayLong.format(new Date(Math.min(...all))) : '\u2014';
+      $('dataStats').innerHTML =
+        statTile('Readings', bp.length, 'blood pressure') +
+        statTile('Weigh-ins', weights.length, 'recorded') +
+        statTile('Since', since, all.length ? 'first entry' : 'no data');
     }
 
     function saveHeight(e) {
       e.preventDefault();
-      const ft = parseInt(document.getElementById('heightFt').value, 10);
-      const inch = parseInt(document.getElementById('heightIn').value || '0', 10);
-      const summary = document.getElementById('profileSummary');
-
+      const ft = parseInt($('heightFt').value, 10);
+      const inch = parseInt($('heightIn').value || '0', 10);
       if (!Number.isFinite(ft) || ft < 3 || ft > 8 || !Number.isFinite(inch) || inch < 0 || inch > 11) {
-        summary.textContent = 'Enter a height between 3\u20320\u2033 and 8\u203211\u2033.';
+        $('profileSummary').textContent = 'Enter a height between 3\u20320\u2033 and 8\u203211\u2033.';
         return;
       }
-
       const profile = getProfile();
       profile.heightIn = ft * 12 + inch;
-      profile.sex = document.getElementById('sex').value;
+      profile.sex = $('sex').value;
       saveProfile(profile);
       render();
     }
@@ -829,14 +994,15 @@
       const weights = getWeights();
       const heightIn = getProfile().heightIn || null;
 
+      renderHome(bp, weights, heightIn);
       renderBPHistory(bp);
       renderWeightHistory(weights, heightIn);
       renderStages(bp[0] || null);
       renderWeightStats(weights, heightIn);
       renderBMIScale(weights, heightIn);
-      renderProfile();
-      updateBPChart(bp);
-      updateWeightChart(weights, heightIn);
+      renderProfile(bp, weights);
+      if (activePage === 'bp') updateBPChart(bp);
+      if (activePage === 'weight') updateWeightChart(weights, heightIn);
     }
 
     // ---------- Export ----------
@@ -848,22 +1014,19 @@
       const weights = getWeights();
       const profile = getProfile();
       const heightIn = profile.heightIn || null;
-
       if (!bp.length && !weights.length) return alert('No data to export.');
 
       const rows = [];
       bp.forEach(r => rows.push({
-        type: 'Blood Pressure', timestamp: r.timestamp,
-        sys: r.sys, dia: r.dia, pulse: r.pulse,
-        category: classifyBP(r.sys, r.dia).label,
-        lbs: '', bmi: '', notes: r.notes
+        type: 'Blood Pressure', timestamp: r.timestamp, sys: r.sys, dia: r.dia, pulse: r.pulse,
+        category: classifyBP(r.sys, r.dia).label, lbs: '', bmi: '', notes: r.notes
       }));
       weights.forEach(r => {
         const bmi = calcBMI(r.lbs, heightIn);
         rows.push({
-          type: 'Weight', timestamp: r.timestamp,
-          sys: '', dia: '', pulse: '', category: bmi ? classifyBMI(bmi).label : '',
-          lbs: r.lbs, bmi: bmi ? bmi.toFixed(1) : '', notes: r.notes
+          type: 'Weight', timestamp: r.timestamp, sys: '', dia: '', pulse: '',
+          category: bmi ? classifyBMI(bmi).label : '', lbs: r.lbs,
+          bmi: bmi ? bmi.toFixed(1) : '', notes: r.notes
         });
       });
       rows.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -890,20 +1053,26 @@
 
     // ---------- Wiring ----------
 
-    document.getElementById('entryForm').addEventListener('submit', addEntry);
-    document.getElementById('profileForm').addEventListener('submit', saveHeight);
-    document.getElementById('exportBtn').addEventListener('click', exportToCSV);
-    document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
-    document.getElementById('confirmDelete').addEventListener('click', performDelete);
-    document.getElementById('confirmModal').addEventListener('click', (e) => {
-      if (e.target.id === 'confirmModal') closeConfirm();
+    FORMS.forEach(cfg => {
+      const form = $(cfg.form);
+      if (form) form.addEventListener('submit', (e) => addEntry(cfg, e));
     });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && pendingDelete) closeConfirm();
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => setPage(btn.dataset.page));
     });
+
+    $('profileForm').addEventListener('submit', saveHeight);
+    $('exportBtn').addEventListener('click', exportToCSV);
+    $('exportBtn2').addEventListener('click', exportToCSV);
+    $('confirmCancel').addEventListener('click', closeConfirm);
+    $('confirmDelete').addEventListener('click', performDelete);
+    $('confirmModal').addEventListener('click', (e) => { if (e.target.id === 'confirmModal') closeConfirm(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && pendingDelete) closeConfirm(); });
 
     renderRangeTabs();
     render();
+    setPage('home');
 
     // Offline support + install prompt. Registration failure is non-fatal:
     // the app still works, it just will not run offline.
