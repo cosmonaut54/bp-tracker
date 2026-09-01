@@ -1,7 +1,7 @@
 /* BP Tracker service worker.
    Bump CACHE_NAME on every release so old assets are evicted on activate. */
 
-const CACHE_NAME = 'bp-tracker-v5';
+const CACHE_NAME = 'bp-tracker-v6';
 
 // Same-origin app shell. Cached with addAll: if any of these fail, install fails,
 // which is what we want -- a half-cached shell is worse than no shell.

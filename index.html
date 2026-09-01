@@ -385,11 +385,12 @@
     function weightAtBMI(bmi, heightIn) { return (bmi * heightIn * heightIn) / 703; }
     function formatHeight(heightIn) { return `${Math.floor(heightIn / 12)}\u2032${heightIn % 12}\u2033`; }
 
+    // hex mirrors the Tailwind class in `bar`, so chart points match the badges exactly
     const BMI_BANDS = [
-      { key: 'under',  label: 'Underweight', range: 'Under 18.5',  max: 18.5,     bar: 'bg-sky-500',     color: 'bg-sky-950 text-sky-400 border-sky-800' },
-      { key: 'normal', label: 'Normal',      range: '18.5 – 24.9', max: 25,       bar: 'bg-emerald-500', color: 'bg-emerald-950 text-emerald-400 border-emerald-800' },
-      { key: 'over',   label: 'Overweight',  range: '25.0 – 29.9', max: 30,       bar: 'bg-amber-500',   color: 'bg-amber-900/60 text-amber-300 border-amber-700' },
-      { key: 'obese',  label: 'Obese',       range: '30.0 +',      max: Infinity, bar: 'bg-rose-500',    color: 'bg-rose-900/60 text-rose-300 border-rose-700' }
+      { key: 'under',  label: 'Underweight', range: 'Under 18.5',  max: 18.5,     bar: 'bg-sky-500',     hex: '#0ea5e9', color: 'bg-sky-950 text-sky-400 border-sky-800' },
+      { key: 'normal', label: 'Normal',      range: '18.5 – 24.9', max: 25,       bar: 'bg-emerald-500', hex: '#10b981', color: 'bg-emerald-950 text-emerald-400 border-emerald-800' },
+      { key: 'over',   label: 'Overweight',  range: '25.0 – 29.9', max: 30,       bar: 'bg-amber-500',   hex: '#f59e0b', color: 'bg-amber-900/60 text-amber-300 border-amber-700' },
+      { key: 'obese',  label: 'Obese',       range: '30.0 +',      max: Infinity, bar: 'bg-rose-500',    hex: '#f43f5e', color: 'bg-rose-900/60 text-rose-300 border-rose-700' }
     ];
     function classifyBMI(bmi) { return BMI_BANDS.find(b => bmi < b.max) || BMI_BANDS[BMI_BANDS.length - 1]; }
 
@@ -660,10 +661,23 @@
       $('weightEmpty').classList.add('hidden');
 
       const lbsData = recent.map(r => r.lbs);
+      const radius = pointSizeFor(recent.length);
+
+      // Each point takes the colour of the BMI band it falls in. Without a height
+      // on file there is no BMI, so they all stay the default green.
+      const pointColors = heightIn
+        ? lbsData.map(w => classifyBMI(calcBMI(w, heightIn)).hex)
+        : lbsData.map(() => '#34d399');
+
       const datasets = [{
         label: 'Weight (lbs)', data: lbsData,
-        borderColor: '#34d399', backgroundColor: '#34d399',
-        tension: 0.3, pointRadius: pointSizeFor(recent.length)
+        borderColor: '#64748b', backgroundColor: '#64748b',
+        pointBackgroundColor: pointColors,
+        pointBorderColor: pointColors,
+        pointBorderWidth: 1,
+        tension: 0.3,
+        pointRadius: radius,
+        pointHoverRadius: radius + 2
       }];
 
       let ceiling = null;
@@ -679,10 +693,17 @@
       const lo = Math.min(...lbsData, ceiling === null ? Infinity : ceiling);
       const hi = Math.max(...lbsData, ceiling === null ? -Infinity : ceiling);
 
+      const options = baseChartOptions(recent, Math.floor(lo - 5), Math.ceil(hi + 5));
+      options.plugins.tooltip.callbacks.label = (ctx) => {
+        const lbs = ctx.parsed.y;
+        const bmi = calcBMI(lbs, heightIn);
+        return bmi ? `${lbs} lbs \u00b7 BMI ${bmi.toFixed(1)} (${classifyBMI(bmi).label})` : `${lbs} lbs`;
+      };
+
       weightChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: { labels: buildLabels(recent), datasets },
-        options: baseChartOptions(recent, Math.floor(lo - 5), Math.ceil(hi + 5))
+        options
       });
     }
 
@@ -855,7 +876,8 @@
       const high = weightAtBMI(25, heightIn).toFixed(1);
       caption.textContent =
         `Dashed line marks BMI 25 \u2014 ${high} lbs at ${formatHeight(heightIn)}. ` +
-        `The full healthy BMI band for that height runs ${low} to ${high} lbs.`;
+        `The full healthy BMI band for that height runs ${low} to ${high} lbs. ` +
+        `Each point is coloured by the BMI band that weigh-in falls in.`;
 
       const activeKey = bmi ? classifyBMI(bmi).key : null;
       el.innerHTML =
