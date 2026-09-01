@@ -73,10 +73,23 @@
 
     <!-- Trend Chart Card -->
     <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-xl mb-6">
-      <h2 class="text-sm font-semibold text-slate-300 mb-3">Recent Trends</h2>
-      <div class="h-48">
-        <canvas id="trendChart"></canvas>
+      <div class="flex justify-between items-baseline mb-3">
+        <h2 class="text-sm font-semibold text-slate-300">Trends</h2>
+        <span id="rangeCount" class="text-[10px] text-slate-500"></span>
       </div>
+
+      <div id="rangeTabs" class="grid grid-cols-5 gap-1 mb-4 bg-slate-900/70 p-1 rounded-xl border border-slate-700/50"></div>
+
+      <div class="h-52 relative">
+        <canvas id="trendChart"></canvas>
+        <div id="chartEmpty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-500">
+          No readings in this range
+        </div>
+      </div>
+
+      <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
+        Dashed lines mark the healthy ceiling &mdash; 120 systolic, 80 diastolic. Staying below both is the target.
+      </p>
     </div>
 
     <!-- History List -->
@@ -91,6 +104,28 @@
       <div id="historyList" class="space-y-2">
         <!-- Dynamic Records Inserted Here -->
       </div>
+    </div>
+
+    <!-- Stage Reference -->
+    <div class="mt-8 bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50">
+      <h2 class="text-sm font-semibold text-slate-300">Blood Pressure Stages</h2>
+      <p id="stageCaption" class="text-[10px] text-slate-500 mt-0.5 mb-3">
+        Ranges defined by the American Heart Association.
+      </p>
+
+      <div class="grid grid-cols-[8px_1fr_auto_auto] gap-x-2 items-center text-[9px] uppercase tracking-wider text-slate-500 pb-1.5 mb-1 border-b border-slate-700/50">
+        <span></span>
+        <span>Category</span>
+        <span class="text-right w-20">Systolic</span>
+        <span class="text-right w-20">Diastolic</span>
+      </div>
+
+      <div id="stageTable" class="space-y-0.5"></div>
+
+      <p class="text-[10px] text-slate-500 mt-3 leading-relaxed">
+        Stage 1 and Stage 2 are met if <em>either</em> number is in range. A crisis reading
+        warrants immediate medical attention, not a wait-and-see.
+      </p>
     </div>
   </div>
 
@@ -109,11 +144,44 @@
 
     // AHA/ACC Blood Pressure Classification
     function classifyBP(sys, dia) {
-      if (sys > 180 || dia > 120) return { label: 'Crisis', color: 'bg-red-950 text-red-400 border-red-800' };
-      if (sys >= 140 || dia >= 90) return { label: 'Stage 2', color: 'bg-rose-900/60 text-rose-300 border-rose-700' };
-      if (sys >= 130 || dia >= 80) return { label: 'Stage 1', color: 'bg-amber-900/60 text-amber-300 border-amber-700' };
-      if (sys >= 120 && dia < 80) return { label: 'Elevated', color: 'bg-yellow-900/60 text-yellow-300 border-yellow-700' };
-      return { label: 'Normal', color: 'bg-emerald-950 text-emerald-400 border-emerald-800' };
+      if (sys > 180 || dia > 120) return { key: 'crisis', label: 'Crisis', color: 'bg-red-950 text-red-400 border-red-800' };
+      if (sys >= 140 || dia >= 90) return { key: 'stage2', label: 'Stage 2', color: 'bg-rose-900/60 text-rose-300 border-rose-700' };
+      if (sys >= 130 || dia >= 80) return { key: 'stage1', label: 'Stage 1', color: 'bg-amber-900/60 text-amber-300 border-amber-700' };
+      if (sys >= 120 && dia < 80) return { key: 'elevated', label: 'Elevated', color: 'bg-yellow-900/60 text-yellow-300 border-yellow-700' };
+      return { key: 'healthy', label: 'Healthy', color: 'bg-emerald-950 text-emerald-400 border-emerald-800' };
+    }
+
+    // Reference table rendered beneath History. Keys match classifyBP so the row
+    // for the latest reading can be highlighted.
+    const STAGES = [
+      { key: 'healthy',  label: 'Healthy',  sys: 'Under 120', dia: 'Under 80',  bar: 'bg-emerald-500' },
+      { key: 'elevated', label: 'Elevated', sys: '120 – 129', dia: 'Under 80',  bar: 'bg-yellow-500' },
+      { key: 'stage1',   label: 'Stage 1',  sys: '130 – 139', dia: '80 – 89',   bar: 'bg-amber-500' },
+      { key: 'stage2',   label: 'Stage 2',  sys: '140 +',     dia: '90 +',      bar: 'bg-rose-500' },
+      { key: 'crisis',   label: 'Crisis',   sys: 'Over 180',  dia: 'Over 120',  bar: 'bg-red-600' }
+    ];
+
+    // Chart ranges. days:null means year-to-date.
+    const RANGES = [
+      { key: '7d',  label: '7D',  days: 7 },
+      { key: '14d', label: '14D', days: 14 },
+      { key: '30d', label: '30D', days: 30 },
+      { key: '90d', label: '90D', days: 90 },
+      { key: 'ytd', label: 'YTD', days: null }
+    ];
+    let activeRange = '7d';
+
+    const fmtYear = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric' });
+
+    function logsInRange(logs, rangeKey) {
+      const range = RANGES.find(r => r.key === rangeKey) || RANGES[0];
+      const now = new Date();
+      if (range.days === null) {
+        const thisYear = fmtYear.format(now);
+        return logs.filter(r => fmtYear.format(new Date(r.timestamp)) === thisYear);
+      }
+      const cutoff = now.getTime() - range.days * 86400000;
+      return logs.filter(r => new Date(r.timestamp).getTime() >= cutoff);
     }
 
     // Notes are user text rendered via innerHTML below -- escape before injecting.
@@ -167,17 +235,30 @@
 
     function updateChart(logs) {
       const ctx = document.getElementById('trendChart').getContext('2d');
-      const recent = [...logs].slice(0, 10).reverse();
+      const emptyEl = document.getElementById('chartEmpty');
 
-      // Array labels render on two lines in Chart.js: date on top, time beneath.
+      // Oldest first, so the line reads left to right.
+      const recent = logsInRange(logs, activeRange).slice().reverse();
+
+      document.getElementById('rangeCount').textContent =
+        `${recent.length} reading${recent.length === 1 ? '' : 's'}`;
+
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+      if (!recent.length) { emptyEl.classList.remove('hidden'); return; }
+      emptyEl.classList.add('hidden');
+
+      // Past ~20 points the time no longer fits under the date.
+      const dense = recent.length > 20;
       const labels = recent.map(r => {
         const d = new Date(r.timestamp);
-        return [fmtDayShort.format(d), fmtClock.format(d)];
+        return dense ? fmtDayShort.format(d) : [fmtDayShort.format(d), fmtClock.format(d)];
       });
       const sysData = recent.map(r => r.sys);
       const diaData = recent.map(r => r.dia);
+      const pointRadius = recent.length > 40 ? 0 : recent.length > 20 ? 2 : 4;
 
-      if (chartInstance) chartInstance.destroy();
+      const peak = Math.max(140, ...sysData);
+      const floor = Math.min(60, ...diaData);
 
       chartInstance = new Chart(ctx, {
         type: 'line',
@@ -185,12 +266,34 @@
           labels,
           datasets: [
             {
+              label: 'Healthy systolic limit',
+              data: new Array(recent.length).fill(120),
+              borderColor: 'rgba(56, 189, 248, 0.40)',
+              borderWidth: 1.5,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              pointHitRadius: 0,
+              tension: 0,
+              isThreshold: true
+            },
+            {
+              label: 'Healthy diastolic limit',
+              data: new Array(recent.length).fill(80),
+              borderColor: 'rgba(168, 85, 247, 0.40)',
+              borderWidth: 1.5,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              pointHitRadius: 0,
+              tension: 0,
+              isThreshold: true
+            },
+            {
               label: 'Systolic',
               data: sysData,
               borderColor: '#38bdf8',
               backgroundColor: '#38bdf8',
               tension: 0.3,
-              pointRadius: 4
+              pointRadius
             },
             {
               label: 'Diastolic',
@@ -198,7 +301,7 @@
               borderColor: '#a855f7',
               backgroundColor: '#a855f7',
               tension: 0.3,
-              pointRadius: 4
+              pointRadius
             }
           ]
         },
@@ -206,8 +309,15 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+            legend: {
+              labels: {
+                color: '#94a3b8',
+                font: { size: 11 },
+                filter: (item, data) => !data.datasets[item.datasetIndex].isThreshold
+              }
+            },
             tooltip: {
+              filter: (item) => !item.dataset.isThreshold,
               callbacks: {
                 title: (items) => {
                   const d = new Date(recent[items[0].dataIndex].timestamp);
@@ -218,10 +328,59 @@
           },
           scales: {
             x: { ticks: { color: '#64748b', font: { size: 9 }, maxRotation: 0, autoSkipPadding: 8 }, grid: { display: false } },
-            y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#334155' } }
+            y: {
+              suggestedMin: Math.max(40, floor - 10),
+              suggestedMax: peak + 10,
+              ticks: { color: '#64748b', font: { size: 10 } },
+              grid: { color: '#334155' }
+            }
           }
         }
       });
+    }
+
+    function renderRangeTabs() {
+      const wrap = document.getElementById('rangeTabs');
+      wrap.innerHTML = '';
+      RANGES.forEach(r => {
+        const b = document.createElement('button');
+        const on = r.key === activeRange;
+        b.type = 'button';
+        b.textContent = r.label;
+        b.className = 'py-1.5 rounded-lg text-[11px] font-medium transition ' +
+          (on ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200');
+        b.addEventListener('click', () => {
+          activeRange = r.key;
+          renderRangeTabs();
+          updateChart(getLogs());
+        });
+        wrap.appendChild(b);
+      });
+    }
+
+    function renderStages(latest) {
+      const activeKey = latest ? classifyBP(latest.sys, latest.dia).key : null;
+      const table = document.getElementById('stageTable');
+      table.innerHTML = '';
+      STAGES.forEach(s => {
+        const on = s.key === activeKey;
+        const row = document.createElement('div');
+        row.className =
+          'grid grid-cols-[8px_1fr_auto_auto] gap-x-2 items-center py-2 px-1 rounded-lg transition ' +
+          (on ? 'bg-slate-700/60 ring-1 ring-slate-500/60' : '');
+        row.innerHTML = `
+          <span class="h-6 w-1.5 rounded-full ${s.bar} ${on ? '' : 'opacity-50'}"></span>
+          <span class="text-xs ${on ? 'text-white font-semibold' : 'text-slate-300'}">${s.label}</span>
+          <span class="text-[11px] text-right w-20 ${on ? 'text-slate-100' : 'text-slate-400'}">${s.sys}</span>
+          <span class="text-[11px] text-right w-20 ${on ? 'text-slate-100' : 'text-slate-400'}">${s.dia}</span>
+        `;
+        table.appendChild(row);
+      });
+
+      const caption = document.getElementById('stageCaption');
+      caption.innerHTML = latest
+        ? `Ranges defined by the American Heart Association. Your latest reading &mdash; ${latest.sys}/${latest.dia} &mdash; is highlighted.`
+        : 'Ranges defined by the American Heart Association.';
     }
 
     function render() {
@@ -262,6 +421,7 @@
       });
 
       updateChart(logs);
+      renderStages(logs[0] || null);
     }
 
     function exportToCSV() {
@@ -287,6 +447,7 @@
     document.getElementById('exportBtn').addEventListener('click', exportToCSV);
     window.deleteRecord = deleteRecord;
 
+    renderRangeTabs();
     render();
 
     // Offline support + install prompt. Registration failure is non-fatal:
