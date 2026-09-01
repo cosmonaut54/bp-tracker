@@ -22,23 +22,42 @@ AI-assisted building goes when I write none of the code myself.
 
 ## Method
 
+Two tools, two distinct stages, no overlap between them.
+
 | Stage | Tool | What it produced |
 |---|---|---|
-| Idea / spec | Me | Plain-language description of what I wanted |
-| First build | Gemini + Claude | Complete single-file HTML app |
-| Review / hardening | Claude | Found and fixed three defects, added PWA layer |
-| Deploy | GitHub Pages | Free static hosting off the repo root |
+| Spec | Me | Plain-language description of what I wanted |
+| Build | **Gemini** | The complete working app, start to finish |
+| Deploy | Me + GitHub Pages | Repo created, published from root |
+| Review & hardening | **Claude** | Defect analysis of the finished repo, then the fixes |
 
-**Division of labor:** Gemini and Claude produced the entire working app —
-markup, styling, storage, classification logic, chart, CSV export. I described
-what I wanted and hosted the result. The review pass was a separate Claude
-session reading the finished repo cold, which is what surfaced the defects: the
-model that writes the code is not the best judge of whether it's done.
+**Gemini built the app.** All of it — markup, styling, localStorage, the AHA/ACC
+classification logic, the Chart.js trend graph, the CSV export, the mobile layout.
+I described what I wanted and Gemini produced a single-file app that worked. This
+is what Gemini is good at: take a plain-language description, return a complete,
+working, well-organized thing.
 
-**Prompting approach:** conversational and iterative rather than one long spec.
-Described the problem, reacted to what came back.
+**Claude reviewed it.** I gave Claude access to the finished repo and asked whether
+it could see it. Claude read the code cold, with no involvement in writing it, and
+came back with three defects and a fix for each. It built no part of the original
+app and gets no credit for it. What it contributed was the pass that turned a
+working app into a correct one.
 
-**Code written by hand:** none.
+**Why the split matters:** the review caught things the build missed *because* it
+was a different model reading with fresh eyes and no memory of its own reasoning.
+A builder tends to re-read its intent rather than its output — it knows what the
+code was meant to do, which is exactly the blind spot that let a README describe
+features that weren't there. Handing a finished artifact to a second model with no
+stake in it is a different operation from asking the first one to check its work.
+
+**Prompting approach (build stage):** _(fill in — how the Gemini session was
+structured: one spec, or iterative?)_
+
+**Prompting approach (review stage):** minimal. "I created a repo, can you access
+it?" No list of concerns, no direction on what to look for. The findings came from
+reading the artifact, not from being pointed at the problems.
+
+**Code written by hand:** none, at either stage.
 
 ## Numbers
 
@@ -47,57 +66,66 @@ Described the problem, reacted to what came back.
 - Total cost: $0 — GitHub Pages free tier, no domain, no backend
 - Files in the finished app: 7 (README, index.html, manifest, service worker, 2 icons, this file)
 
-## What the AI got right
+## What Gemini got right
 
-The first version was genuinely usable, not a demo. Specifically:
+The first version was genuinely usable, not a demo:
 
-- **Classification logic was correct**, including a subtlety that's easy to get
-  wrong: the AHA "Elevated" band (120–129 systolic *and* diastolic under 80) only
-  works if Stage 1 is tested first. The generated ordering handled it.
+- **The classification logic was correct**, including a subtlety that's easy to get
+  wrong. The AHA "Elevated" band (120–129 systolic *and* diastolic under 80) only
+  resolves correctly if Stage 1 is tested first. Gemini ordered the checks properly.
 - **Single file, zero build step.** No npm, no bundler, no framework. Drop it on
-  any static host and it runs. For an app this size that's the right call and it
+  any static host and it runs. For an app this size that's the right call, and it
   made hosting free.
-- **localStorage was the right storage choice** and it made the privacy goal real
+- **localStorage was the right storage choice**, which made the privacy goal real
   rather than a promise — the readings physically cannot leave the device.
-- **Mobile-first layout** that actually works one-handed, with a sensible dark theme.
+- **Mobile-first layout** that works one-handed, with a coherent dark theme.
 
-## What the AI got wrong
+## What Claude found
 
 Three defects, all in code that looked finished:
 
 1. **The README described an app that didn't exist.** It claimed "Progressive Web
-   App," "Offline Ready," and gave install instructions for iOS and Android.
-   There was no `manifest.json` and no service worker, so Android would never
-   offer to install it and it would not load offline. The docs and the code were
-   generated in the same breath and nobody checked one against the other. This is
-   the most transferable lesson here: **a generated README documents intent, not
-   the artifact.** Verify every claim against the actual files.
+   App," "Offline Ready," and gave install instructions for iOS and Android. There
+   was no `manifest.json` and no service worker, so Android would never offer to
+   install it and it would not load offline. Docs and code were generated in the
+   same session and neither was checked against the other. Most transferable lesson
+   here: **a generated README documents intent, not the artifact.**
 2. **The notes field was injected with `innerHTML` and no escaping.** The data is
-   local-only so there's no attacker, but typing an apostrophe or a `<` into a
-   note would corrupt that row's rendering. Fixed with an `escapeHTML` helper.
+   local-only so there's no attacker, but typing an apostrophe or a `<` into a note
+   would corrupt that row's rendering.
 3. **Offline was impossible by construction anyway** — Tailwind and Chart.js load
    from CDNs at runtime. Even with a service worker, no network meant no styling
-   and no chart until those got precached too.
+   and no chart until those were precached too.
 
-One limitation I couldn't fix through this toolchain: Safari won't accept SVG for
+Claude then wrote the fixes: manifest, service worker with CDN precaching, an
+`escapeHTML` helper, and the icon set.
+
+One limitation neither tool could solve: Safari won't accept SVG for
 `apple-touch-icon`, so iOS shows a screenshot on the home screen until a PNG gets
-added. Committing a binary file was outside what the connector could do.
+added, and committing a binary file was outside what the connector could do.
 
 ## What I'd do differently
 
-Ask for the PWA layer up front instead of bolting it on. "Make it installable and
-work offline" is one clause in the original prompt and an entire follow-up session
-afterward.
+Ask for the PWA layer up front. "Make it installable and work offline" is one
+clause in the original build prompt and an entire follow-up session afterward.
 
-Read the generated README against the generated code before believing either one.
+Run the review stage before publishing rather than after. The app was live and on
+my phone in a state where its own README was wrong about it.
 
 ## Reusable pattern
 
+**Build with one model, review with another.** That's the finding from this build
+and the one I most want to test on the next few. Gemini is strong at generation —
+plain description in, complete working artifact out. Claude is strong at the pass
+afterward — reading a codebase it didn't write and finding what's wrong with it.
+Using either for the other's job wastes what it's good at. One data point so far;
+the portfolio exists partly to find out whether it holds.
+
 **Single-file HTML + localStorage + GitHub Pages** is a strong default for any
 personal utility that doesn't need a server. Free, permanent, no maintenance, no
-accounts, and the data stays on the device.
+accounts, data stays on the device.
 
-The standard checks worth running on anything generated this way:
+**The review checklist worth running on anything generated this way:**
 
 - Does the README describe files that actually exist?
 - Is user-entered text escaped before it hits `innerHTML`?
