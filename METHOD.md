@@ -11,7 +11,7 @@
 
 ---
 
-## Why it exists
+## PURPOSE
 
 Every blood pressure app in the store wants an account, serves ads, or syncs
 readings to somebody else's server. I wanted to tap three numbers once a day on
@@ -20,7 +20,7 @@ my phone and have the data stay on the phone. No login, no ads, no cloud.
 Secondary reason: I wanted a small, real, finished thing to test how far
 AI-assisted building goes when I write none of the code myself.
 
-## Method
+## METHOD
 
 Two tools, two distinct stages, no overlap between them.
 
@@ -54,14 +54,14 @@ code was meant to do, which is exactly the blind spot that let a README describe
 features that weren't there. Handing a finished artifact to a second model with no
 stake in it is a different operation from asking the first one to check its work.
 
-## Numbers
+## STATS
 
-- Time to first working version: _(fill in)_
-- Time to shipped: _(fill in)_
+- Time to first working version: 10 minutes
+- Time to shipped: 1 hour
 - Total cost: $0 — GitHub Pages free tier, no domain, no backend
 - Files in the finished app: 7 (README, index.html, manifest, service worker, 2 icons, this file)
 
-## What Gemini got right
+## WHAT GEMINI GOT RIGHT
 
 The first version was genuinely usable, not a demo:
 
@@ -75,7 +75,7 @@ The first version was genuinely usable, not a demo:
   rather than a promise — the readings physically cannot leave the device.
 - **Mobile-first layout** that works one-handed, with a coherent dark theme.
 
-## What Claude found
+## WHAT CLAUDE FOUND
 
 Three defects, all in code that looked finished:
 
@@ -85,9 +85,11 @@ Three defects, all in code that looked finished:
    install it and it would not load offline. Docs and code were generated in the
    same session and neither was checked against the other. Most transferable lesson
    here: **a generated README documents intent, not the artifact.**
+   
 2. **The notes field was injected with `innerHTML` and no escaping.** The data is
    local-only so there's no attacker, but typing an apostrophe or a `<` into a note
    would corrupt that row's rendering.
+   
 3. **Offline was impossible by construction anyway** — Tailwind and Chart.js load
    from CDNs at runtime. Even with a service worker, no network meant no styling
    and no chart until those were precached too.
@@ -95,19 +97,15 @@ Three defects, all in code that looked finished:
 Claude then wrote the fixes: manifest, service worker with CDN precaching, an
 `escapeHTML` helper, and the icon set.
 
-One limitation neither tool could solve: Safari won't accept SVG for
-`apple-touch-icon`, so iOS shows a screenshot on the home screen until a PNG gets
-added, and committing a binary file was outside what the connector could do.
+## WHAT I'D DO DIFFERENTLY
 
-## What I'd do differently
-
-Ask for the PWA layer up front. "Make it installable and work offline" is one
+I would have asked for the PWA layer up front in my original instructions. "Make it installable and work offline" is one
 clause in the original build prompt and an entire follow-up session afterward.
 
 Run the review stage before publishing rather than after. The app was live and on
 my phone in a state where its own README was wrong about it.
 
-## Reusable pattern
+## REUSABLE PATTERN
 
 **Build with one model, review with another.** That's the finding from this build
 and the one I most want to test on the next few. Gemini is strong at generation —
