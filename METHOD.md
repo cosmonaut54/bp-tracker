@@ -31,11 +31,15 @@ Two tools, two distinct stages, no overlap between them.
 | Deploy | Me + GitHub Pages | Repo created, published from root |
 | Review & hardening | **Claude** | Defect analysis of the finished repo, then the fixes |
 
+**Prompting approach (build stage):** I provided a clear description of the problem that I needed solved, listed the functionality I needed, and stated my access requirements.
+
 **Gemini built the app.** All of it — markup, styling, localStorage, the AHA/ACC
 classification logic, the Chart.js trend graph, the CSV export, the mobile layout.
 I described what I wanted and Gemini produced a single-file app that worked. This
 is what Gemini is good at: take a plain-language description, return a complete,
 working, well-organized thing.
+
+**Prompting approach (review stage):** I confirmed Claude could access the repo and requested it be reviewed. I have many personalized settings and skill files created for Claude that instruct Claude on how to respond to requests. For requests to access and review code, Claude has instructions directing it to evaluate for accuracy, completeness, efficiency, optimization, and security. 
 
 **Claude reviewed it.** I gave Claude access to the finished repo and asked whether
 it could see it. Claude read the code cold, with no involvement in writing it, and
@@ -49,15 +53,6 @@ A builder tends to re-read its intent rather than its output — it knows what t
 code was meant to do, which is exactly the blind spot that let a README describe
 features that weren't there. Handing a finished artifact to a second model with no
 stake in it is a different operation from asking the first one to check its work.
-
-**Prompting approach (build stage):** _(fill in — how the Gemini session was
-structured: one spec, or iterative?)_
-
-**Prompting approach (review stage):** minimal. "I created a repo, can you access
-it?" No list of concerns, no direction on what to look for. The findings came from
-reading the artifact, not from being pointed at the problems.
-
-**Code written by hand:** none, at either stage.
 
 ## Numbers
 
