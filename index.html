@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1e293b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>BP Tracker</title>
+  
+  <!-- Tailwind CSS CDN for styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans antialiased">
+  
+  <div class="max-w-md mx-auto px-4 py-6">
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-white">BP Tracker</h1>
+        <p class="text-xs text-slate-400">Cardiovascular Log & Trends</p>
+      </div>
+      <button id="exportBtn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+        Export CSV
+      </button>
+    </header>
+
+    <!-- Entry Form Card -->
+    <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-5 border border-slate-700/60 shadow-xl mb-6">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3">Log Measurement</h2>
+      <form id="bpForm" class="space-y-4">
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Systolic</label>
+            <input type="number" id="systolic" required placeholder="120" min="50" max="260"
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Diastolic</label>
+            <input type="number" id="diastolic" required placeholder="80" min="30" max="180"
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Pulse (BPM)</label>
+            <input type="number" id="pulse" placeholder="70" min="30" max="220"
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Notes (Optional)</label>
+          <input type="text" id="notes" placeholder="e.g., Morning, after coffee, post-workout"
+                 class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-medium py-2.5 rounded-xl transition duration-150 shadow-lg shadow-blue-600/20 text-sm">
+          Save Reading
+        </button>
+      </form>
+    </div>
+
+    <!-- Trend Chart Card -->
+    <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-xl mb-6">
+      <h2 class="text-sm font-semibold text-slate-300 mb-3">Recent Trends</h2>
+      <div class="h-48">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- History List -->
+    <div class="space-y-3">
+      <div class="flex justify-between items-center px-1">
+        <h2 class="text-sm font-semibold text-slate-300">History</h2>
+        <span id="logCount" class="text-xs text-slate-500">0 records</span>
+      </div>
+      <div id="historyList" class="space-y-2">
+        <!-- Dynamic Records Inserted Here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'bp_tracker_records';
+    let chartInstance = null;
+
+    // AHA/ACC Blood Pressure Classification
+    function classifyBP(sys, dia) {
+      if (sys > 180 || dia > 120) return { label: 'Crisis', color: 'bg-red-950 text-red-400 border-red-800' };
+      if (sys >= 140 || dia >= 90) return { label: 'Stage 2', color: 'bg-rose-900/60 text-rose-300 border-rose-700' };
+      if (sys >= 130 || dia >= 80) return { label: 'Stage 1', color: 'bg-amber-900/60 text-amber-300 border-amber-700' };
+      if (sys >= 120 && dia < 80) return { label: 'Elevated', color: 'bg-yellow-900/60 text-yellow-300 border-yellow-700' };
+      return { label: 'Normal', color: 'bg-emerald-950 text-emerald-400 border-emerald-800' };
+    }
+
+    function getLogs() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    }
+
+    function saveLogs(logs) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+      render();
+    }
+
+    function addRecord(e) {
+      e.preventDefault();
+      const sys = parseInt(document.getElementById('systolic').value);
+      const dia = parseInt(document.getElementById('diastolic').value);
+      const pulse = document.getElementById('pulse').value ? parseInt(document.getElementById('pulse').value) : null;
+      const notes = document.getElementById('notes').value.trim();
+
+      const newRecord = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        sys,
+        dia,
+        pulse,
+        notes
+      };
+
+      const logs = getLogs();
+      logs.unshift(newRecord);
+      saveLogs(logs);
+
+      // Reset Form
+      document.getElementById('bpForm').reset();
+    }
+
+    function deleteRecord(id) {
+      const logs = getLogs().filter(item => item.id !== id);
+      saveLogs(logs);
+    }
+
+    function updateChart(logs) {
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      const recent = [...logs].slice(0, 10).reverse();
+
+      const labels = recent.map(r => new Date(r.timestamp).toLocaleDateString([], { month: 'numeric', day: 'numeric' }));
+      const sysData = recent.map(r => r.sys);
+      const diaData = recent.map(r => r.dia);
+
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Systolic',
+              data: sysData,
+              borderColor: '#38bdf8',
+              backgroundColor: '#38bdf8',
+              tension: 0.3,
+              pointRadius: 4
+            },
+            {
+              label: 'Diastolic',
+              data: diaData,
+              borderColor: '#a855f7',
+              backgroundColor: '#a855f7',
+              tension: 0.3,
+              pointRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#94a3b8', font: { size: 11 } } }
+          },
+          scales: {
+            x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#334155' } }
+          }
+        }
+      });
+    }
+
+    function render() {
+      const logs = getLogs();
+      const listEl = document.getElementById('historyList');
+      document.getElementById('logCount').textContent = `${logs.length} record${logs.length === 1 ? '' : 's'}`;
+
+      listEl.innerHTML = '';
+
+      if (logs.length === 0) {
+        listEl.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">No logs yet. Add your first reading above.</div>';
+      }
+
+      logs.forEach(item => {
+        const date = new Date(item.timestamp);
+        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const category = classifyBP(item.sys, item.dia);
+
+        const row = document.createElement('div');
+        row.className = 'bg-slate-800/60 border border-slate-700/40 rounded-xl p-3 flex justify-between items-center';
+        row.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base font-bold text-white">${item.sys}/${item.dia}</span>
+              <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${category.color}">${category.label}</span>
+              ${item.pulse ? `<span class="text-xs text-slate-400">♥ ${item.pulse}</span>` : ''}
+            </div>
+            <div class="text-[11px] text-slate-400 mt-0.5">
+              ${dateStr} at ${timeStr} ${item.notes ? `• <span class="italic text-slate-300">${item.notes}</span>` : ''}
+            </div>
+          </div>
+          <button onclick="deleteRecord(${item.id})" class="text-slate-500 hover:text-red-400 p-1 text-sm transition">✕</button>
+        `;
+        listEl.appendChild(row);
+      });
+
+      updateChart(logs);
+    }
+
+    function exportToCSV() {
+      const logs = getLogs();
+      if (!logs.length) return alert('No data to export.');
+      
+      let csv = 'Timestamp,Date,Time,Systolic,Diastolic,Pulse,Category,Notes\n';
+      logs.forEach(r => {
+        const d = new Date(r.timestamp);
+        const cat = classifyBP(r.sys, r.dia).label;
+        csv += `"${r.timestamp}","${d.toLocaleDateString()}","${d.toLocaleTimeString()}","${r.sys}","${r.dia}","${r.pulse || ''}","${cat}","${(r.notes || '').replace(/"/g, '""')}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `blood_pressure_log_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    }
+
+    document.getElementById('bpForm').addEventListener('submit', addRecord);
+    document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+    window.deleteRecord = deleteRecord;
+
+    render();
+  </script>
+</body>
+</html>
