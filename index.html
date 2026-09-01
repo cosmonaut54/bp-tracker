@@ -6,11 +6,14 @@
   <meta name="theme-color" content="#1e293b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BP Tracker" />
+  <meta name="description" content="Log, categorize, and chart blood pressure readings. All data stays on your device." />
   <title>BP Tracker</title>
-  <!-- Direct App Icon for iOS and Android -->
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230f172a'/%3E%3Crect x='32' y='32' width='448' height='448' rx='96' fill='%231e293b' stroke='%23334155' stroke-width='8'/%3E%3Cpath d='M 80 256 L 180 256 L 215 160 L 255 352 L 295 210 L 335 285 L 360 256 L 432 256' fill='none' stroke='%2338bdf8' stroke-width='26' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M 370 305 C 370 305 342 345 342 370 C 342 386 355 398 370 398 C 385 398 398 386 398 370 C 398 345 370 305 370 305 Z' fill='%23ef4444'/%3E%3C/svg%3E" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230f172a'/%3E%3Crect x='32' y='32' width='448' height='448' rx='96' fill='%231e293b' stroke='%23334155' stroke-width='8'/%3E%3Cpath d='M 80 256 L 180 256 L 215 160 L 255 352 L 295 210 L 335 285 L 360 256 L 432 256' fill='none' stroke='%2338bdf8' stroke-width='26' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M 370 305 C 370 305 342 345 342 370 C 342 386 355 398 370 398 C 385 398 398 386 398 370 C 398 345 370 305 370 305 Z' fill='%23ef4444'/%3E%3C/svg%3E" />
 
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  
   <!-- Tailwind CSS CDN for styling -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js for data visualization -->
@@ -99,6 +102,17 @@
       if (sys >= 130 || dia >= 80) return { label: 'Stage 1', color: 'bg-amber-900/60 text-amber-300 border-amber-700' };
       if (sys >= 120 && dia < 80) return { label: 'Elevated', color: 'bg-yellow-900/60 text-yellow-300 border-yellow-700' };
       return { label: 'Normal', color: 'bg-emerald-950 text-emerald-400 border-emerald-800' };
+    }
+
+    // Notes are user text rendered via innerHTML below -- escape before injecting.
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
     }
 
     function getLogs() {
@@ -213,7 +227,7 @@
               ${item.pulse ? `<span class="text-xs text-slate-400">♥ ${item.pulse}</span>` : ''}
             </div>
             <div class="text-[11px] text-slate-400 mt-0.5">
-              ${dateStr} at ${timeStr} ${item.notes ? `• <span class="italic text-slate-300">${item.notes}</span>` : ''}
+              ${dateStr} at ${timeStr} ${item.notes ? `• <span class="italic text-slate-300">${escapeHTML(item.notes)}</span>` : ''}
             </div>
           </div>
           <button onclick="deleteRecord(${item.id})" class="text-slate-500 hover:text-red-400 p-1 text-sm transition">✕</button>
@@ -248,6 +262,16 @@
     window.deleteRecord = deleteRecord;
 
     render();
+
+    // Offline support + install prompt. Registration failure is non-fatal:
+    // the app still works, it just will not run offline.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.warn('Service worker registration failed:', err);
+        });
+      });
+    }
   </script>
 </body>
 </html>
