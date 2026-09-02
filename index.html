@@ -321,7 +321,7 @@
   </div>
 
   <!-- ================= BOTTOM NAV ================= -->
-  <nav id="bottomNav" class="fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 backdrop-blur border-t border-slate-700/60">
+  <nav id="bottomNav" class="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 shadow-[0_-2px_16px_rgba(0,0,0,0.45)]">
     <div class="max-w-md mx-auto grid grid-cols-4">
       <button type="button" data-page="home" class="nav-btn flex flex-col items-center gap-0.5 py-2.5 transition">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
@@ -506,8 +506,8 @@
 
       document.querySelectorAll('.nav-btn').forEach(btn => {
         const on = btn.dataset.page === key;
-        btn.classList.toggle('text-blue-400', on);
-        btn.classList.toggle('text-slate-500', !on);
+        btn.classList.toggle('text-sky-500', on);
+        btn.classList.toggle('text-slate-600', !on);
       });
 
       $('pageTitle').textContent = PAGES[key].title;
