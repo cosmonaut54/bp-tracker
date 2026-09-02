@@ -16,6 +16,7 @@ you where that reading sits, and the data never leaves the phone.
 ## What it does
 
 **Blood pressure**
+- Systolic, diastolic, and pulse, with pulse optional
 - Categorizes every reading against the American Heart Association ranges — Healthy,
   Elevated, Stage 1, Stage 2, Crisis
 - A stage reference table that highlights where your latest reading falls, so the

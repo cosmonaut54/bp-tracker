@@ -66,16 +66,23 @@
                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label for="weightHome" class="block text-xs font-medium text-slate-400 mb-1">Weight</label>
-              <input type="number" id="weightHome" placeholder="175" min="50" max="700" step="0.1" inputmode="decimal"
+              <label for="pulseHome" class="block text-xs font-medium text-slate-400 mb-1">Pulse</label>
+              <input type="number" id="pulseHome" placeholder="70" min="30" max="220" inputmode="numeric"
                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
             </div>
           </div>
 
-          <div>
-            <label for="notesHome" class="block text-xs font-medium text-slate-400 mb-1">Notes (optional)</label>
-            <input type="text" id="notesHome" placeholder="e.g., morning, after coffee"
-                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label for="weightHome" class="block text-xs font-medium text-slate-400 mb-1">Weight</label>
+              <input type="number" id="weightHome" placeholder="175" min="50" max="700" step="0.1" inputmode="decimal"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div class="col-span-2">
+              <label for="notesHome" class="block text-xs font-medium text-slate-400 mb-1">Notes (optional)</label>
+              <input type="text" id="notesHome" placeholder="e.g., morning, after coffee"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500" />
+            </div>
           </div>
 
           <p id="errHome" class="hidden text-xs text-rose-400"></p>
@@ -97,7 +104,7 @@
       <div class="bg-slate-800/80 backdrop-blur rounded-2xl p-5 border border-slate-700/60 shadow-xl mb-5">
         <h2 class="text-sm font-semibold text-slate-300 mb-3">Log Reading</h2>
         <form id="formBp" class="space-y-4">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-3 gap-3">
             <div>
               <label for="sysBp" class="block text-xs font-medium text-slate-400 mb-1">Systolic</label>
               <input type="number" id="sysBp" placeholder="120" min="50" max="260" inputmode="numeric"
@@ -106,6 +113,11 @@
             <div>
               <label for="diaBp" class="block text-xs font-medium text-slate-400 mb-1">Diastolic</label>
               <input type="number" id="diaBp" placeholder="80" min="30" max="180" inputmode="numeric"
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label for="pulseBp" class="block text-xs font-medium text-slate-400 mb-1">Pulse</label>
+              <input type="number" id="pulseBp" placeholder="70" min="30" max="220" inputmode="numeric"
                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-center text-lg font-semibold text-white focus:outline-none focus:border-blue-500" />
             </div>
           </div>
@@ -512,9 +524,9 @@
     // ---------- Entry forms ----------
 
     const FORMS = [
-      { form: 'formHome',   sys: 'sysHome', dia: 'diaHome', weight: 'weightHome', notes: 'notesHome', err: 'errHome' },
-      { form: 'formBp',     sys: 'sysBp',   dia: 'diaBp',   weight: null,         notes: 'notesBp',   err: 'errBp' },
-      { form: 'formWeight', sys: null,      dia: null,      weight: 'weightWt',   notes: 'notesWt',   err: 'errWt' }
+      { form: 'formHome',   sys: 'sysHome', dia: 'diaHome', pulse: 'pulseHome', weight: 'weightHome', notes: 'notesHome', err: 'errHome' },
+      { form: 'formBp',     sys: 'sysBp',   dia: 'diaBp',   pulse: 'pulseBp',   weight: null,         notes: 'notesBp',   err: 'errBp' },
+      { form: 'formWeight', sys: null,      dia: null,      pulse: null,        weight: 'weightWt',   notes: 'notesWt',   err: 'errWt' }
     ];
 
     const fieldValue = (id) => (id && $(id) ? $(id).value.trim() : '');
@@ -527,6 +539,7 @@
 
       const rawSys = fieldValue(cfg.sys);
       const rawDia = fieldValue(cfg.dia);
+      const rawPulse = fieldValue(cfg.pulse);
       const rawWeight = fieldValue(cfg.weight);
       const notes = fieldValue(cfg.notes);
 
@@ -542,7 +555,7 @@
         return fail('Blood pressure needs both systolic and diastolic.');
       }
 
-      let sys = null, dia = null, lbs = null;
+      let sys = null, dia = null, pulse = null, lbs = null;
 
       if (hasBP) {
         sys = parseInt(rawSys, 10);
@@ -557,6 +570,13 @@
         // transposed reading (91/134) from being stored and mis-classified.
         if (sys <= dia) {
           return fail(`Systolic must be higher than diastolic. Did you mean ${dia}/${sys}?`);
+        }
+        // Pulse is optional; validate only if something was entered.
+        if (rawPulse !== '') {
+          pulse = parseInt(rawPulse, 10);
+          if (!Number.isFinite(pulse) || pulse < 30 || pulse > 220) {
+            return fail('Pulse looks off. Expected somewhere between 30 and 220.');
+          }
         }
       }
 
@@ -573,7 +593,7 @@
 
       if (hasBP) {
         const bp = getBP();
-        bp.unshift({ id, timestamp, sys, dia, notes });
+        bp.unshift({ id, timestamp, sys, dia, pulse, notes });
         writeList(KEY_BP, bp);
       }
       if (hasWeight) {
@@ -584,8 +604,9 @@
 
       $(cfg.form).reset();
       render();
-      showToast(hasBP && hasWeight ? `Saved ${sys}/${dia} and ${lbs} lbs`
-              : hasBP ? `Saved ${sys}/${dia}`
+      const bpText = pulse ? `${sys}/${dia} \u00b7 ${pulse} bpm` : `${sys}/${dia}`;
+      showToast(hasBP && hasWeight ? `Saved ${bpText} and ${lbs} lbs`
+              : hasBP ? `Saved ${bpText}`
               : `Saved ${lbs} lbs`);
     }
 
@@ -859,6 +880,7 @@
             <div class="flex items-center gap-2">
               <span class="text-base font-bold text-white">${item.sys}/${item.dia}</span>
               <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${cat.color}">${cat.label}</span>
+              ${item.pulse ? `<span class="text-xs text-slate-400">\u2665 ${item.pulse}</span>` : ''}
             </div>
             <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>`;
         } else {
@@ -963,6 +985,7 @@
           <div class="flex items-center gap-2">
             <span class="text-base font-bold text-white">${item.sys}/${item.dia}</span>
             <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${cat.color}">${cat.label}</span>
+            ${item.pulse ? `<span class="text-xs text-slate-400">\u2665 ${item.pulse}</span>` : ''}
           </div>
           <div class="text-[11px] text-slate-500 mt-1">${meta}${item.notes ? ` \u00b7 ${escapeHTML(item.notes)}` : ''}</div>`;
         row.appendChild(left);
@@ -1086,25 +1109,25 @@
 
       const rows = [];
       bp.forEach(r => rows.push({
-        type: 'Blood Pressure', timestamp: r.timestamp, sys: r.sys, dia: r.dia,
+        type: 'Blood Pressure', timestamp: r.timestamp, sys: r.sys, dia: r.dia, pulse: r.pulse,
         category: classifyBP(r.sys, r.dia).label, lbs: '', bmi: '', notes: r.notes
       }));
       weights.forEach(r => {
         const bmi = calcBMI(r.lbs, heightIn);
         rows.push({
-          type: 'Weight', timestamp: r.timestamp, sys: '', dia: '',
+          type: 'Weight', timestamp: r.timestamp, sys: '', dia: '', pulse: '',
           category: bmi ? classifyBMI(bmi).label : '', lbs: r.lbs,
           bmi: bmi ? bmi.toFixed(1) : '', notes: r.notes
         });
       });
       rows.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-      let csv = 'Type,Timestamp (UTC),Date (ET),Time (ET),Systolic,Diastolic,Category,Weight (lbs),BMI,Notes,Height (in),Sex\n';
+      let csv = 'Type,Timestamp (UTC),Date (ET),Time (ET),Systolic,Diastolic,Pulse,Category,Weight (lbs),BMI,Notes,Height (in),Sex\n';
       rows.forEach(r => {
         const d = new Date(r.timestamp);
         csv += [
           csvCell(r.type), csvCell(r.timestamp), csvCell(fmtCsvDate.format(d)), csvCell(fmtClock.format(d)),
-          csvCell(r.sys), csvCell(r.dia), csvCell(r.category),
+          csvCell(r.sys), csvCell(r.dia), csvCell(r.pulse), csvCell(r.category),
           csvCell(r.lbs), csvCell(r.bmi), csvCell(r.notes),
           csvCell(heightIn || ''), csvCell(SEX_LABELS[profile.sex] || '')
         ].join(',') + '\n';
